@@ -91,15 +91,18 @@ export function ParametersPage() {
   };
 
   const handleClone = (param: any) => {
+    const clonedParamId = Date.now().toString();
     const clonedParam = {
       ...param,
-      id: Date.now().toString(),
+      id: clonedParamId,
       key: `${param.key}_copy`,
       nodeStatus: "not_deployed",
       updatedAt: new Date().toISOString().split('T')[0],
       updatedBy: "Current User"
     };
     setParameters([...parameters, clonedParam]);
+    // Redirect to parameter edit page with cloned configuration
+    navigate(`/parameters/${clonedParamId}/edit`);
   };
 
   return (

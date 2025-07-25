@@ -79,15 +79,18 @@ export function SubnodesPage() {
   };
 
   const handleClone = (subnode: any) => {
+    const clonedSubnodeId = Date.now().toString();
     const clonedSubnode = {
       ...subnode,
-      id: Date.now().toString(),
+      id: clonedSubnodeId,
       name: `${subnode.name} (Copy)`,
       deployment: "not_deployed",
       createdDate: new Date().toISOString().split('T')[0],
       createdBy: "Current User"
     };
     setSubnodes([...subnodes, clonedSubnode]);
+    // Redirect to subnode edit page with cloned configuration
+    navigate(`/subnodes/${clonedSubnodeId}/edit`);
   };
 
   return (

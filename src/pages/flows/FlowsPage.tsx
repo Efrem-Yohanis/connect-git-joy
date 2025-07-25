@@ -102,9 +102,10 @@ export function FlowsPage() {
   };
 
   const handleClone = (flow: any) => {
+    const clonedFlowId = Date.now().toString();
     const clonedFlow = {
       ...flow,
-      id: Date.now().toString(),
+      id: clonedFlowId,
       name: `${flow.name} (Copy)`,
       status: "stopped",
       deployment: "not_deployed",
@@ -112,6 +113,8 @@ export function FlowsPage() {
       lastUpdatedBy: "Current User"
     };
     setFlows([...flows, clonedFlow]);
+    // Redirect to flow edit page with cloned configuration
+    navigate(`/flows/${clonedFlowId}/edit`);
   };
 
   return (

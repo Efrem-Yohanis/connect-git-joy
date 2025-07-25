@@ -72,15 +72,18 @@ export function NodesPage() {
   };
 
   const handleClone = (node: any) => {
+    const clonedNodeId = Date.now().toString();
     const clonedNode = {
       ...node,
-      id: Date.now().toString(),
+      id: clonedNodeId,
       name: `${node.name} (Copy)`,
       deployment: "not_deployed",
       createdDate: new Date().toISOString().split('T')[0],
       createdBy: "Current User"
     };
     setNodes([...nodes, clonedNode]);
+    // Redirect to node edit page with cloned configuration
+    navigate(`/nodes/${clonedNodeId}/edit`);
   };
 
   return (
