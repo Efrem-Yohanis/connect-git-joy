@@ -14,29 +14,164 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 
-// Mock data for nodes
+// Mock data for nodes with flow builder specific types
 const mockNodes = [
   {
     id: "1",
-    name: "Database Source",
+    name: "Raw Backup Node",
+    type: "raw_backup",
     deployment: "deployed",
     createdDate: "2024-01-15",
     createdBy: "John Doe",
+    description: "Handles raw data backup operations",
+    subnodes: [
+      { id: "sub1", name: "Backup Validation", type: "validation" },
+      { id: "sub2", name: "Data Compression", type: "compression" }
+    ],
+    parameters: [
+      { id: "param1", key: "backup_path", value: "/data/backup", type: "string" },
+      { id: "param2", key: "compression_level", value: "9", type: "integer" }
+    ]
   },
   {
-    id: "2", 
-    name: "Data Transform",
-    deployment: "not_deployed",
-    createdDate: "2024-01-10",
+    id: "2",
+    name: "SFTP Collector Node",
+    type: "sftp_collector",
+    deployment: "deployed",
+    createdDate: "2024-01-12",
     createdBy: "Jane Smith",
+    description: "Collects data via SFTP protocol",
+    subnodes: [
+      { id: "sub3", name: "Connection Handler", type: "connection" },
+      { id: "sub4", name: "File Transfer", type: "transfer" }
+    ],
+    parameters: [
+      { id: "param3", key: "sftp_host", value: "192.168.1.100", type: "string" },
+      { id: "param4", key: "sftp_port", value: "22", type: "integer" },
+      { id: "param5", key: "username", value: "collector", type: "string" }
+    ]
   },
   {
     id: "3",
-    name: "File Output",
-    deployment: "deployed",
-    createdDate: "2024-01-05",
+    name: "FDC Node",
+    type: "fdc",
+    deployment: "not_deployed",
+    createdDate: "2024-01-10",
     createdBy: "Bob Johnson",
+    description: "File Data Collector for processing data files",
+    subnodes: [
+      { id: "sub5", name: "File Parser", type: "parser" },
+      { id: "sub6", name: "Data Validator", type: "validation" }
+    ],
+    parameters: [
+      { id: "param6", key: "file_format", value: "csv", type: "string" },
+      { id: "param7", key: "delimiter", value: ",", type: "string" }
+    ]
   },
+  {
+    id: "4",
+    name: "Encoder Node",
+    type: "encoder",
+    deployment: "deployed",
+    createdDate: "2024-01-08",
+    createdBy: "Alice Wilson",
+    description: "Encodes data for transmission",
+    subnodes: [
+      { id: "sub7", name: "Base64 Encoder", type: "base64" },
+      { id: "sub8", name: "UTF-8 Encoder", type: "utf8" }
+    ],
+    parameters: [
+      { id: "param8", key: "encoding_type", value: "base64", type: "string" },
+      { id: "param9", key: "output_format", value: "json", type: "string" }
+    ]
+  },
+  {
+    id: "5",
+    name: "ASN.1 Decoder Node",
+    type: "asn1_decoder",
+    deployment: "not_deployed",
+    createdDate: "2024-01-05",
+    createdBy: "Charlie Brown",
+    description: "Decodes ASN.1 formatted data",
+    subnodes: [
+      { id: "sub9", name: "Schema Validator", type: "validation" },
+      { id: "sub10", name: "Data Parser", type: "parser" }
+    ],
+    parameters: [
+      { id: "param10", key: "schema_file", value: "/schemas/asn1.schema", type: "string" },
+      { id: "param11", key: "strict_mode", value: "true", type: "boolean" }
+    ]
+  },
+  {
+    id: "6",
+    name: "ASCII Decoder Node",
+    type: "ascii_decoder",
+    deployment: "deployed",
+    createdDate: "2024-01-03",
+    createdBy: "Diana Prince",
+    description: "Decodes ASCII encoded data",
+    subnodes: [
+      { id: "sub11", name: "Character Mapper", type: "mapper" },
+      { id: "sub12", name: "Encoding Detector", type: "detector" }
+    ],
+    parameters: [
+      { id: "param12", key: "character_set", value: "ascii", type: "string" },
+      { id: "param13", key: "error_handling", value: "ignore", type: "string" }
+    ]
+  },
+  {
+    id: "7",
+    name: "Enrichment BLN Node",
+    type: "enrichment_bln",
+    deployment: "not_deployed",
+    createdDate: "2024-01-01",
+    createdBy: "Eve Adams",
+    description: "Business Logic Node for data enrichment",
+    subnodes: [
+      { id: "sub13", name: "Data Enricher", type: "enrichment" },
+      { id: "sub14", name: "Rule Engine", type: "rules" }
+    ],
+    parameters: [
+      { id: "param14", key: "enrichment_rules", value: "/rules/enrichment.json", type: "string" },
+      { id: "param15", key: "cache_enabled", value: "true", type: "boolean" }
+    ]
+  },
+  {
+    id: "8",
+    name: "Diameter Interface Node",
+    type: "diameter_interface",
+    deployment: "deployed",
+    createdDate: "2023-12-28",
+    createdBy: "Frank Miller",
+    description: "Diameter protocol interface handler",
+    subnodes: [
+      { id: "sub15", name: "Message Parser", type: "parser" },
+      { id: "sub16", name: "Session Manager", type: "session" }
+    ],
+    parameters: [
+      { id: "param16", key: "diameter_host", value: "diameter.local", type: "string" },
+      { id: "param17", key: "realm", value: "example.com", type: "string" },
+      { id: "param18", key: "application_id", value: "16777238", type: "integer" }
+    ]
+  },
+  {
+    id: "9",
+    name: "Validation BLN Node",
+    type: "validation_bln",
+    deployment: "deployed",
+    createdDate: "2023-12-25",
+    createdBy: "Grace Kelly",
+    description: "Business Logic Node for data validation with dual outputs",
+    subnodes: [
+      { id: "sub17", name: "Rule Validator", type: "validation" },
+      { id: "sub18", name: "Error Handler", type: "error_handling" }
+    ],
+    parameters: [
+      { id: "param19", key: "validation_rules", value: "/rules/validation.json", type: "string" },
+      { id: "param20", key: "strict_validation", value: "false", type: "boolean" },
+      { id: "param21", key: "error_output", value: "separate", type: "string" }
+    ]
+  }
 ];
 
 export function NodesPage() {
