@@ -1,10 +1,9 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Flow Orchestrator Design System */
 
 @layer base {
   :root {
@@ -17,8 +16,10 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    /* Flow Orchestrator Primary Colors */
+    --primary: 259 94% 51%;
     --primary-foreground: 210 40% 98%;
+    --primary-glow: 259 94% 65%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -34,25 +35,52 @@ All colors MUST be HSL.
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 259 94% 51%;
 
     --radius: 0.5rem;
 
+    /* Flow Orchestrator Specific Colors */
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+    --warning: 43 96% 56%;
+    --warning-foreground: 222.2 84% 4.9%;
+    --info: 217 91% 60%;
+    --info-foreground: 210 40% 98%;
+
+    /* Canvas Colors */
+    --canvas-background: 210 40% 98%;
+    --canvas-grid: 214.3 31.8% 91.4%;
+    --node-background: 0 0% 100%;
+    --node-border: 214.3 31.8% 91.4%;
+    --node-deployed: 142 76% 36%;
+    --node-undeployed: 215.4 16.3% 46.9%;
+    --node-running: 259 94% 51%;
+    --node-stopped: 0 84.2% 60.2%;
+    --edge-default: 215.4 16.3% 46.9%;
+    --edge-active: 259 94% 51%;
+
+    /* Sidebar */
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
+    --sidebar-primary: 259 94% 51%;
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 259 94% 51%;
 
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-canvas: linear-gradient(180deg, hsl(var(--canvas-background)), hsl(var(--background)));
+    
+    /* Shadows */
+    --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.3);
+    --shadow-node: 0 2px 8px -2px hsl(var(--foreground) / 0.1);
+    --shadow-canvas: 0 4px 16px -4px hsl(var(--foreground) / 0.1);
+    
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
@@ -65,8 +93,9 @@ All colors MUST be HSL.
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
+    --primary: 259 94% 65%;
     --primary-foreground: 222.2 47.4% 11.2%;
+    --primary-glow: 259 94% 75%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -82,15 +111,38 @@ All colors MUST be HSL.
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --ring: 259 94% 65%;
+
+    --success: 142 76% 45%;
+    --success-foreground: 210 40% 98%;
+    --warning: 43 96% 60%;
+    --warning-foreground: 222.2 84% 4.9%;
+    --info: 217 91% 65%;
+    --info-foreground: 210 40% 98%;
+
+    --canvas-background: 217.2 32.6% 17.5%;
+    --canvas-grid: 217.2 32.6% 20%;
+    --node-background: 217.2 32.6% 17.5%;
+    --node-border: 217.2 32.6% 25%;
+    --node-deployed: 142 76% 45%;
+    --node-undeployed: 215 20.2% 65.1%;
+    --node-running: 259 94% 65%;
+    --node-stopped: 0 62.8% 30.6%;
+    --edge-default: 215 20.2% 65.1%;
+    --edge-active: 259 94% 65%;
+
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary: 259 94% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 259 94% 65%;
+
+    --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.4);
+    --shadow-node: 0 2px 8px -2px hsl(var(--foreground) / 0.2);
+    --shadow-canvas: 0 4px 16px -4px hsl(var(--foreground) / 0.2);
   }
 }
 
@@ -101,5 +153,54 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fade-in 0.8s ease-out forwards;
+    opacity: 0;
+  }
+  
+  .animate-slide-up {
+    animation: slide-up 0.6s ease-out forwards;
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  
+  .animate-scale-in {
+    animation: scale-in 0.4s ease-out forwards;
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  
+  .glass-morphism {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .glow-effect {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+  }
+}
+
+@keyframes fade-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  to {
+    transform: scale(1);
+    opacity: 1;
   }
 }
