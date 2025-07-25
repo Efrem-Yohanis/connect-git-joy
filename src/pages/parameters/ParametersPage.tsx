@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Download, Settings, Trash2, Eye, Edit, Grid2X2, List } from "lucide-react";
+import { Plus, Download, Settings, Trash2, Eye, Edit, Grid2X2, List, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -75,7 +75,7 @@ const mockParameters = [
 
 export function ParametersPage() {
   const navigate = useNavigate();
-  const [parameters] = useState(mockParameters);
+  const [parameters, setParameters] = useState(mockParameters);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
 
@@ -88,6 +88,18 @@ export function ParametersPage() {
     return status === "deployed" 
       ? <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">🟢 Deployed</Badge>
       : <Badge variant="secondary" className="bg-red-100 text-red-800 border-red-200">🔴 Not Deployed</Badge>;
+  };
+
+  const handleClone = (param: any) => {
+    const clonedParam = {
+      ...param,
+      id: Date.now().toString(),
+      key: `${param.key}_copy`,
+      nodeStatus: "not_deployed",
+      updatedAt: new Date().toISOString().split('T')[0],
+      updatedBy: "Current User"
+    };
+    setParameters([...parameters, clonedParam]);
   };
 
   return (
@@ -191,6 +203,14 @@ export function ParametersPage() {
                       <Download className="h-3 w-3 mr-1" />
                       Export
                     </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleClone(param)}
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      Clone
+                    </Button>
                     <Button variant="outline" size="sm">
                       <Trash2 className="h-3 w-3 mr-1" />
                       Delete
@@ -253,6 +273,13 @@ export function ParametersPage() {
                       </Button>
                       <Button variant="outline" size="sm">
                         <Download className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleClone(param)}
+                      >
+                        <Copy className="h-4 w-4" />
                       </Button>
                       <Button variant="outline" size="sm">
                         <Trash2 className="h-4 w-4" />

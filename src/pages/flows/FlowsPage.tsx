@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Upload, Download, Settings, Trash2, Eye, Grid, List } from "lucide-react";
+import { Plus, Upload, Download, Settings, Trash2, Eye, Grid, List, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -101,6 +101,19 @@ export function FlowsPage() {
     link.click();
   };
 
+  const handleClone = (flow: any) => {
+    const clonedFlow = {
+      ...flow,
+      id: Date.now().toString(),
+      name: `${flow.name} (Copy)`,
+      status: "stopped",
+      deployment: "not_deployed",
+      createdDate: new Date().toISOString().split('T')[0],
+      lastUpdatedBy: "Current User"
+    };
+    setFlows([...flows, clonedFlow]);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -194,6 +207,13 @@ export function FlowsPage() {
                       >
                         <Download className="h-4 w-4" />
                       </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleClone(flow)}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="outline" size="sm">
@@ -243,6 +263,13 @@ export function FlowsPage() {
                       onClick={() => handleExport(flow)}
                     >
                       <Download className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleClone(flow)}
+                    >
+                      <Copy className="h-4 w-4" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>

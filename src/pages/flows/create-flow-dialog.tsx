@@ -45,8 +45,8 @@ export function CreateFlowDialog({ open, onOpenChange }: CreateFlowDialogProps) 
       setFlowName("");
       setFlowDescription("");
       
-      // Navigate to flow editor
-      navigate(`/flows/${flowId}/edit`);
+      // Navigate to empty flow editor canvas
+      navigate(`/flows/editor`, { state: { flowId, flowName, flowDescription, isEmpty: true } });
     } catch (error) {
       toast.error("Failed to create flow");
     } finally {

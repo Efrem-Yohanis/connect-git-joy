@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Upload, Download, Settings, Trash2, Eye, Grid2X2, List } from "lucide-react";
+import { Plus, Upload, Download, Settings, Trash2, Eye, Grid2X2, List, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -76,6 +76,18 @@ export function SubnodesPage() {
     link.href = url;
     link.download = `${subnode.name}.json`;
     link.click();
+  };
+
+  const handleClone = (subnode: any) => {
+    const clonedSubnode = {
+      ...subnode,
+      id: Date.now().toString(),
+      name: `${subnode.name} (Copy)`,
+      deployment: "not_deployed",
+      createdDate: new Date().toISOString().split('T')[0],
+      createdBy: "Current User"
+    };
+    setSubnodes([...subnodes, clonedSubnode]);
   };
 
   return (
@@ -177,6 +189,14 @@ export function SubnodesPage() {
                     </Button>
                     <Button 
                       variant="outline" 
+                      size="sm"
+                      onClick={() => handleClone(subnode)}
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      Clone
+                    </Button>
+                    <Button 
+                      variant="outline" 
                       size="sm" 
                       onClick={() => handleDelete(subnode.id)}
                     >
@@ -236,6 +256,13 @@ export function SubnodesPage() {
                         onClick={() => handleExport(subnode)}
                       >
                         <Download className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleClone(subnode)}
+                      >
+                        <Copy className="h-4 w-4" />
                       </Button>
                       <Button 
                         variant="outline" 
