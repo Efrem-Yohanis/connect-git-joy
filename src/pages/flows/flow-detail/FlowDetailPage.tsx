@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FlowCanvas } from "./FlowCanvas"; // Import FlowCanvas
+import { Play, Square } from "lucide-react";
 import axios from "axios";
 
 export function FlowDetailPage() {
@@ -113,6 +114,26 @@ export function FlowDetailPage() {
   
   const edges = Array.from(uniqueEdges.values());
 
+  const handleRunFlow = async () => {
+    try {
+      await axios.post(`http://127.0.0.1:8000/api/flows/${id}/start/`);
+      setFlow(prev => ({ ...prev, is_running: true }));
+    } catch (err) {
+      console.error("Error starting flow:", err);
+      setError("Error starting flow");
+    }
+  };
+
+  const handleStopFlow = async () => {
+    try {
+      await axios.post(`http://127.0.0.1:8000/api/flows/${id}/stop/`);
+      setFlow(prev => ({ ...prev, is_running: false }));
+    } catch (err) {
+      console.error("Error stopping flow:", err);
+      setError("Error stopping flow");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -121,6 +142,18 @@ export function FlowDetailPage() {
           {getStatusBadge()}
         </div>
         <div className="flex items-center space-x-2">
+          {flow.is_deployed && !flow.is_running && (
+            <Button onClick={handleRunFlow}>
+              <Play className="h-4 w-4 mr-2" />
+              Run
+            </Button>
+          )}
+          {flow.is_running && (
+            <Button variant="destructive" onClick={handleStopFlow}>
+              <Square className="h-4 w-4 mr-2" />
+              Stop
+            </Button>
+          )}
           <Button onClick={() => navigate(`/flows/${id}/edit`)}>Edit Flow</Button>
         </div>
       </div>
