@@ -21,6 +21,7 @@ import { CreateSubnodePage } from "@/pages/subnodes/create-subnode/CreateSubnode
 import { ParametersPage } from "@/pages/parameters/ParametersPage";
 import { ParameterDetailPage } from "@/pages/parameters/parameter-detail/ParameterDetailPage";
 import { CreateParameterPage } from "@/pages/parameters/create-parameter/CreateParameterPage";
+import { EditParameterPage } from "@/pages/parameters/edit-parameter/EditParameterPage";
 import { EdgesPage } from "@/pages/edges/EdgesPage";
 import NotFound from "./pages/NotFound";
 
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="/parameters" element={<ParametersPage />} />
               <Route path="/parameters/new" element={<CreateParameterPage />} />
               <Route path="/parameters/:id" element={<ParameterDetailPage />} />
+              <Route path="/parameters/:id/edit" element={<EditParameterPage />} />
               <Route path="/edges" element={<EdgesPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

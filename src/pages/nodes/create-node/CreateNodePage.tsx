@@ -6,9 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface NodeParameter {
@@ -17,43 +15,30 @@ interface NodeParameter {
   valueType: string;
 }
 
-interface NodeSubnode {
-  id: string;
-  name: string;
-  availableSubnodeId: string;
-}
+const mockExistingParameters = [
+  { id: "1", key: "database_url", valueType: "String" },
+  { id: "2", key: "timeout", valueType: "Integer" },
+  { id: "3", key: "enable_cache", valueType: "Boolean" },
+  { id: "4", key: "max_connections", valueType: "Integer" },
+];
 
-const mockAvailableSubnodes = [
+const mockActiveSubnodes = [
   { id: "1", name: "Data Validator" },
   { id: "2", name: "Email Processor" },
   { id: "3", name: "File Handler" },
   { id: "4", name: "API Connector" },
+  { id: "5", name: "Cache Manager" },
 ];
-
-interface SubNodeParameter {
-  id: string;
-  nodeParameterId: string;
-  value: string;
-}
-
-interface SubNode {
-  id: string;
-  name: string;
-  scriptName: string;
-  isDeployed: boolean;
-  parameters: SubNodeParameter[];
-}
 
 export function CreateNodePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   
   const [nodeName, setNodeName] = useState("");
-  const [scriptName, setScriptName] = useState("");
-  const [executableScript, setExecutableScript] = useState("");
-  const [useScriptName, setUseScriptName] = useState(true);
+  const [nodeDescription, setNodeDescription] = useState("");
+  const [scriptFile, setScriptFile] = useState<File | null>(null);
   const [nodeParameters, setNodeParameters] = useState<NodeParameter[]>([]);
-  const [subNodes, setSubNodes] = useState<SubNode[]>([]);
+  const [selectedSubnodes, setSelectedSubnodes] = useState<string[]>([]);
 
   const addParameter = () => {
     const newParam: NodeParameter = {
@@ -64,13 +49,20 @@ export function CreateNodePage() {
     setNodeParameters([...nodeParameters, newParam]);
   };
 
+  const addExistingParameter = (existingParamId: string) => {
+    const existingParam = mockExistingParameters.find(p => p.id === existingParamId);
+    if (existingParam) {
+      const newParam: NodeParameter = {
+        id: Date.now().toString(),
+        key: existingParam.key,
+        valueType: existingParam.valueType
+      };
+      setNodeParameters([...nodeParameters, newParam]);
+    }
+  };
+
   const removeParameter = (id: string) => {
     setNodeParameters(nodeParameters.filter(p => p.id !== id));
-    // Remove parameter from all subnodes
-    setSubNodes(subNodes.map(subnode => ({
-      ...subnode,
-      parameters: subnode.parameters.filter(p => p.nodeParameterId !== id)
-    })));
   };
 
   const updateParameter = (id: string, field: keyof NodeParameter, value: string) => {
@@ -79,59 +71,21 @@ export function CreateNodePage() {
     ));
   };
 
-  const addSubNode = () => {
-    const newSubNode: SubNode = {
-      id: Date.now().toString(),
-      name: "",
-      scriptName: "",
-      isDeployed: false,
-      parameters: []
-    };
-    setSubNodes([...subNodes, newSubNode]);
+  const addSubnode = (subnodeId: string) => {
+    if (!selectedSubnodes.includes(subnodeId)) {
+      setSelectedSubnodes([...selectedSubnodes, subnodeId]);
+    }
   };
 
-  const removeSubNode = (id: string) => {
-    setSubNodes(subNodes.filter(s => s.id !== id));
+  const removeSubnode = (subnodeId: string) => {
+    setSelectedSubnodes(selectedSubnodes.filter(id => id !== subnodeId));
   };
 
-  const updateSubNode = (id: string, field: keyof Omit<SubNode, 'parameters'>, value: string | boolean) => {
-    setSubNodes(subNodes.map(s => 
-      s.id === id ? { ...s, [field]: value } : s
-    ));
-  };
-
-  const addSubNodeParameter = (subNodeId: string) => {
-    const newParam: SubNodeParameter = {
-      id: Date.now().toString(),
-      nodeParameterId: "",
-      value: ""
-    };
-    setSubNodes(subNodes.map(s => 
-      s.id === subNodeId 
-        ? { ...s, parameters: [...s.parameters, newParam] }
-        : s
-    ));
-  };
-
-  const removeSubNodeParameter = (subNodeId: string, paramId: string) => {
-    setSubNodes(subNodes.map(s => 
-      s.id === subNodeId 
-        ? { ...s, parameters: s.parameters.filter(p => p.id !== paramId) }
-        : s
-    ));
-  };
-
-  const updateSubNodeParameter = (subNodeId: string, paramId: string, field: keyof SubNodeParameter, value: string) => {
-    setSubNodes(subNodes.map(s => 
-      s.id === subNodeId 
-        ? { 
-            ...s, 
-            parameters: s.parameters.map(p => 
-              p.id === paramId ? { ...p, [field]: value } : p
-            ) 
-          }
-        : s
-    ));
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setScriptFile(file);
+    }
   };
 
   const handleSave = () => {
@@ -144,19 +98,10 @@ export function CreateNodePage() {
       return;
     }
 
-    if (!useScriptName && !executableScript.trim()) {
+    if (!scriptFile) {
       toast({
         title: "Error", 
-        description: "Either script name or executable script is required",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (useScriptName && !scriptName.trim()) {
-      toast({
-        title: "Error",
-        description: "Script name is required when using script reference",
+        description: "Script file is required",
         variant: "destructive"
       });
       return;
@@ -168,18 +113,6 @@ export function CreateNodePage() {
         toast({
           title: "Error",
           description: "All parameter keys must be filled",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-
-    // Validate subnodes
-    for (const subnode of subNodes) {
-      if (!subnode.name.trim()) {
-        toast({
-          title: "Error",
-          description: "All subnode names must be filled",
           variant: "destructive"
         });
         return;
@@ -220,36 +153,38 @@ export function CreateNodePage() {
             />
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Switch 
-              checked={useScriptName}
-              onCheckedChange={setUseScriptName}
+          <div>
+            <Label htmlFor="nodeDescription">Description</Label>
+            <Textarea
+              id="nodeDescription"
+              value={nodeDescription}
+              onChange={(e) => setNodeDescription(e.target.value)}
+              placeholder="Enter node description"
+              rows={3}
             />
-            <Label>Use Script Name (toggle for Executable Script)</Label>
           </div>
 
-          {useScriptName ? (
-            <div>
-              <Label htmlFor="scriptName">Script Name</Label>
+          <div>
+            <Label htmlFor="scriptFile">Script File *</Label>
+            <div className="flex items-center gap-2 mt-1">
               <Input
-                id="scriptName"
-                value={scriptName}
-                onChange={(e) => setScriptName(e.target.value)}
-                placeholder="Reference to saved script"
+                id="scriptFile"
+                type="file"
+                accept=".py,.js,.sh,.bat"
+                onChange={handleFileUpload}
+                className="cursor-pointer"
               />
+              <Button size="sm" variant="outline">
+                <Upload className="h-4 w-4 mr-2" />
+                Upload
+              </Button>
             </div>
-          ) : (
-            <div>
-              <Label htmlFor="executableScript">Executable Script *</Label>
-              <Textarea
-                id="executableScript"
-                value={executableScript}
-                onChange={(e) => setExecutableScript(e.target.value)}
-                placeholder="Enter the script to be executed"
-                rows={6}
-              />
-            </div>
-          )}
+            {scriptFile && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Selected: {scriptFile.name}
+              </p>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -258,10 +193,24 @@ export function CreateNodePage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Node Parameters</CardTitle>
-            <Button onClick={addParameter} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Parameter
-            </Button>
+            <div className="flex gap-2">
+              <Select onValueChange={addExistingParameter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Select existing parameter" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mockExistingParameters.map((param) => (
+                    <SelectItem key={param.id} value={param.id}>
+                      {param.key} ({param.valueType})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={addParameter} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add New
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -270,7 +219,7 @@ export function CreateNodePage() {
           ) : (
             <div className="space-y-4">
               {nodeParameters.map((param) => (
-                <div key={param.id} className="flex items-center space-x-4 p-4 border rounded-lg">
+                <div key={param.id} className="flex items-end gap-4 p-4 border rounded-lg">
                   <div className="flex-1">
                     <Label>Key *</Label>
                     <Input
@@ -315,125 +264,46 @@ export function CreateNodePage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>SubNodes (Optional)</CardTitle>
-            <Button onClick={addSubNode} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add SubNode
-            </Button>
+            <Select onValueChange={addSubnode}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Select subnode" />
+              </SelectTrigger>
+              <SelectContent>
+                {mockActiveSubnodes
+                  .filter(subnode => !selectedSubnodes.includes(subnode.id))
+                  .map((subnode) => (
+                    <SelectItem key={subnode.id} value={subnode.id}>
+                      {subnode.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>
-          {subNodes.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">No subnodes added yet</p>
+          {selectedSubnodes.length === 0 ? (
+            <p className="text-muted-foreground text-center py-4">No subnodes selected yet</p>
           ) : (
-            <div className="space-y-6">
-              {subNodes.map((subnode) => (
-                <div key={subnode.id} className="p-4 border rounded-lg space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold">SubNode Configuration</h4>
+            <div className="space-y-3">
+              {selectedSubnodes.map((subnodeId) => {
+                const subnode = mockActiveSubnodes.find(s => s.id === subnodeId);
+                return (
+                  <div key={subnodeId} className="flex items-center justify-between p-3 border rounded-lg">
+                    <span className="font-medium">{subnode?.name}</span>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => removeSubNode(subnode.id)}
+                      onClick={() => removeSubnode(subnodeId)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label>SubNode Name *</Label>
-                      <Input
-                        value={subnode.name}
-                        onChange={(e) => updateSubNode(subnode.id, 'name', e.target.value)}
-                        placeholder="SubNode name"
-                      />
-                    </div>
-                    <div>
-                      <Label>Script Name</Label>
-                      <Input
-                        value={subnode.scriptName}
-                        onChange={(e) => updateSubNode(subnode.id, 'scriptName', e.target.value)}
-                        placeholder="Script reference (optional)"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={subnode.isDeployed}
-                      onCheckedChange={(checked) => updateSubNode(subnode.id, 'isDeployed', checked as boolean)}
-                    />
-                    <Label>Is Deployed</Label>
-                  </div>
-
-                  {/* SubNode Parameters */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="font-semibold">SubNode Parameters</Label>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => addSubNodeParameter(subnode.id)}
-                        disabled={nodeParameters.length === 0}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Parameter
-                      </Button>
-                    </div>
-                    
-                    {nodeParameters.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">Add node parameters first to link them here</p>
-                    ) : subnode.parameters.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No parameters linked yet</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {subnode.parameters.map((param) => (
-                          <div key={param.id} className="flex items-center space-x-4 p-2 bg-muted/50 rounded">
-                            <div className="flex-1">
-                              <Label className="text-sm">Node Parameter</Label>
-                              <Select
-                                value={param.nodeParameterId}
-                                onValueChange={(value) => updateSubNodeParameter(subnode.id, param.id, 'nodeParameterId', value)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select parameter" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {nodeParameters.map((nodeParam) => (
-                                    <SelectItem key={nodeParam.id} value={nodeParam.id}>
-                                      {nodeParam.key} ({nodeParam.valueType})
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="flex-1">
-                              <Label className="text-sm">Value</Label>
-                              <Input
-                                value={param.value}
-                                onChange={(e) => updateSubNodeParameter(subnode.id, param.id, 'value', e.target.value)}
-                                placeholder="Parameter value"
-                              />
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => removeSubNodeParameter(subnode.id, param.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
-
 
       {/* Action Buttons */}
       <div className="flex items-center justify-end space-x-4">

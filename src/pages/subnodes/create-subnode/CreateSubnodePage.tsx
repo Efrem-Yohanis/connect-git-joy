@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -60,6 +61,7 @@ export function CreateSubnodePage() {
   
   const [formData, setFormData] = useState({
     name: "",
+    description: "",
     selectedNodeId: "",
   });
   
@@ -199,6 +201,17 @@ export function CreateSubnodePage() {
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              placeholder="Enter subnode description"
+              rows={3}
+            />
+          </div>
+
           {selectedNode && (
             <div className="space-y-2">
               <Label>Script Inheritance</Label>
@@ -216,7 +229,7 @@ export function CreateSubnodePage() {
           <CardHeader>
             <CardTitle>Parameter Configuration</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Configure values for parameters inherited from parent node
+              Override default values for parameters inherited from parent node
             </p>
           </CardHeader>
           <CardContent>

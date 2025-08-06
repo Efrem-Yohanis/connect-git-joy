@@ -25,7 +25,7 @@ export const Asn1DecoderNode = memo(({ data, selected }: Asn1DecoderNodeProps) =
       <Handle 
         type="target" 
         position={Position.Left} 
-        className="!bg-edge-default !border-edge-default !w-3 !h-3" 
+        className="!bg-primary !border-background !w-3 !h-3" 
       />
       
       <div className="space-y-3">
@@ -55,7 +55,7 @@ export const Asn1DecoderNode = memo(({ data, selected }: Asn1DecoderNodeProps) =
       <Handle 
         type="source" 
         position={Position.Right} 
-        className="!bg-edge-default !border-edge-default !w-3 !h-3" 
+        className="!bg-primary !border-background !w-3 !h-3" 
       />
     </div>
   );

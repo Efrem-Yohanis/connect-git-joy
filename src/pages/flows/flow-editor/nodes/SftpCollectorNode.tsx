@@ -47,9 +47,14 @@ export const SftpCollectorNode = memo(({ data, selected }: SftpCollectorNodeProp
       </div>
       
       <Handle 
+        type="target" 
+        position={Position.Left} 
+        className="!bg-primary !border-background !w-3 !h-3" 
+      />
+      <Handle 
         type="source" 
         position={Position.Right} 
-        className="!bg-edge-default !border-edge-default !w-3 !h-3" 
+        className="!bg-primary !border-background !w-3 !h-3" 
       />
     </div>
   );

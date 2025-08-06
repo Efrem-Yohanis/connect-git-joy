@@ -14,18 +14,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-interface CreateFlowDialogProps {
+interface CloneFlowDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  sourceFlow: any;
+  onClone: (sourceFlow: any, newName: string, newDescription: string) => void;
 }
 
-export function CreateFlowDialog({ open, onOpenChange }: CreateFlowDialogProps) {
-  const [flowName, setFlowName] = useState("");
-  const [flowDescription, setFlowDescription] = useState("");
+export function CloneFlowDialog({ open, onOpenChange, sourceFlow, onClone }: CloneFlowDialogProps) {
+  const [flowName, setFlowName] = useState(sourceFlow ? `${sourceFlow.name} (Copy)` : "");
+  const [flowDescription, setFlowDescription] = useState(sourceFlow?.description || "");
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
 
-  const handleCreate = async () => {
+  const handleClone = async () => {
     if (!flowName.trim()) {
       toast.error("Please enter a flow name");
       return;
@@ -35,59 +36,61 @@ export function CreateFlowDialog({ open, onOpenChange }: CreateFlowDialogProps) 
     
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Generate a mock flow ID
-      const flowId = Date.now().toString();
-      
-      toast.success("Flow created successfully!");
+      onClone(sourceFlow, flowName.trim(), flowDescription.trim());
+      toast.success("Flow cloned successfully!");
       onOpenChange(false);
-      setFlowName("");
-      setFlowDescription("");
-      
-      // Navigate to flow editor with the new flow ID
-      navigate(`/flows/${flowId}/edit`, { state: { flowName, flowDescription, isEmpty: true } });
     } catch (error) {
-      toast.error("Failed to create flow");
+      toast.error("Failed to clone flow");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Reset form when dialog opens with new source flow
+  const handleOpenChange = (isOpen: boolean) => {
+    if (isOpen && sourceFlow) {
+      setFlowName(`${sourceFlow.name} (Copy)`);
+      setFlowDescription(sourceFlow.description || "");
+    }
+    onOpenChange(isOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New Flow</DialogTitle>
+          <DialogTitle>Clone Flow</DialogTitle>
           <DialogDescription>
-            Enter a name for your new data flow. You'll be taken to the flow editor once created.
+            Create a copy of "{sourceFlow?.name}". Enter a new name and description for the cloned flow.
           </DialogDescription>
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="flowName" className="text-right">
+            <Label htmlFor="cloneFlowName" className="text-right">
               Name
             </Label>
             <Input
-              id="flowName"
+              id="cloneFlowName"
               value={flowName}
               onChange={(e) => setFlowName(e.target.value)}
               placeholder="Enter flow name..."
               className="col-span-3"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  handleCreate();
+                  handleClone();
                 }
               }}
             />
           </div>
           <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor="flowDescription" className="text-right pt-2">
+            <Label htmlFor="cloneFlowDescription" className="text-right pt-2">
               Description
             </Label>
             <Textarea
-              id="flowDescription"
+              id="cloneFlowDescription"
               value={flowDescription}
               onChange={(e) => setFlowDescription(e.target.value)}
               placeholder="Enter flow description..."
@@ -106,10 +109,10 @@ export function CreateFlowDialog({ open, onOpenChange }: CreateFlowDialogProps) 
           </Button>
           <Button 
             type="button" 
-            onClick={handleCreate}
+            onClick={handleClone}
             disabled={isLoading || !flowName.trim()}
           >
-            {isLoading ? "Creating..." : "Create Flow"}
+            {isLoading ? "Cloning..." : "Clone Flow"}
           </Button>
         </DialogFooter>
       </DialogContent>
