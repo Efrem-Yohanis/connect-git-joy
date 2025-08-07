@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Upload, Download, Settings, Trash2, Eye, Grid2X2, List, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,190 +13,88 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
 
-// Mock data for nodes with flow builder specific types
-const mockNodes = [
-  {
-    id: "1",
-    name: "Raw Backup Node",
-    type: "raw_backup",
-    deployment: "deployed",
-    createdDate: "2024-01-15",
-    createdBy: "John Doe",
-    description: "Handles raw data backup operations",
-    subnodes: [
-      { id: "sub1", name: "Backup Validation", type: "validation" },
-      { id: "sub2", name: "Data Compression", type: "compression" }
-    ],
-    parameters: [
-      { id: "param1", key: "backup_path", value: "/data/backup", type: "string" },
-      { id: "param2", key: "compression_level", value: "9", type: "integer" }
-    ]
-  },
-  {
-    id: "2",
-    name: "SFTP Collector Node",
-    type: "sftp_collector",
-    deployment: "deployed",
-    createdDate: "2024-01-12",
-    createdBy: "Jane Smith",
-    description: "Collects data via SFTP protocol",
-    subnodes: [
-      { id: "sub3", name: "Connection Handler", type: "connection" },
-      { id: "sub4", name: "File Transfer", type: "transfer" }
-    ],
-    parameters: [
-      { id: "param3", key: "sftp_host", value: "192.168.1.100", type: "string" },
-      { id: "param4", key: "sftp_port", value: "22", type: "integer" },
-      { id: "param5", key: "username", value: "collector", type: "string" }
-    ]
-  },
-  {
-    id: "3",
-    name: "FDC Node",
-    type: "fdc",
-    deployment: "not_deployed",
-    createdDate: "2024-01-10",
-    createdBy: "Bob Johnson",
-    description: "File Data Collector for processing data files",
-    subnodes: [
-      { id: "sub5", name: "File Parser", type: "parser" },
-      { id: "sub6", name: "Data Validator", type: "validation" }
-    ],
-    parameters: [
-      { id: "param6", key: "file_format", value: "csv", type: "string" },
-      { id: "param7", key: "delimiter", value: ",", type: "string" }
-    ]
-  },
-  {
-    id: "4",
-    name: "Encoder Node",
-    type: "encoder",
-    deployment: "deployed",
-    createdDate: "2024-01-08",
-    createdBy: "Alice Wilson",
-    description: "Encodes data for transmission",
-    subnodes: [
-      { id: "sub7", name: "Base64 Encoder", type: "base64" },
-      { id: "sub8", name: "UTF-8 Encoder", type: "utf8" }
-    ],
-    parameters: [
-      { id: "param8", key: "encoding_type", value: "base64", type: "string" },
-      { id: "param9", key: "output_format", value: "json", type: "string" }
-    ]
-  },
-  {
-    id: "5",
-    name: "ASN.1 Decoder Node",
-    type: "asn1_decoder",
-    deployment: "not_deployed",
-    createdDate: "2024-01-05",
-    createdBy: "Charlie Brown",
-    description: "Decodes ASN.1 formatted data",
-    subnodes: [
-      { id: "sub9", name: "Schema Validator", type: "validation" },
-      { id: "sub10", name: "Data Parser", type: "parser" }
-    ],
-    parameters: [
-      { id: "param10", key: "schema_file", value: "/schemas/asn1.schema", type: "string" },
-      { id: "param11", key: "strict_mode", value: "true", type: "boolean" }
-    ]
-  },
-  {
-    id: "6",
-    name: "ASCII Decoder Node",
-    type: "ascii_decoder",
-    deployment: "deployed",
-    createdDate: "2024-01-03",
-    createdBy: "Diana Prince",
-    description: "Decodes ASCII encoded data",
-    subnodes: [
-      { id: "sub11", name: "Character Mapper", type: "mapper" },
-      { id: "sub12", name: "Encoding Detector", type: "detector" }
-    ],
-    parameters: [
-      { id: "param12", key: "character_set", value: "ascii", type: "string" },
-      { id: "param13", key: "error_handling", value: "ignore", type: "string" }
-    ]
-  },
-  {
-    id: "7",
-    name: "Enrichment BLN Node",
-    type: "enrichment_bln",
-    deployment: "not_deployed",
-    createdDate: "2024-01-01",
-    createdBy: "Eve Adams",
-    description: "Business Logic Node for data enrichment",
-    subnodes: [
-      { id: "sub13", name: "Data Enricher", type: "enrichment" },
-      { id: "sub14", name: "Rule Engine", type: "rules" }
-    ],
-    parameters: [
-      { id: "param14", key: "enrichment_rules", value: "/rules/enrichment.json", type: "string" },
-      { id: "param15", key: "cache_enabled", value: "true", type: "boolean" }
-    ]
-  },
-  {
-    id: "8",
-    name: "Diameter Interface Node",
-    type: "diameter_interface",
-    deployment: "deployed",
-    createdDate: "2023-12-28",
-    createdBy: "Frank Miller",
-    description: "Diameter protocol interface handler",
-    subnodes: [
-      { id: "sub15", name: "Message Parser", type: "parser" },
-      { id: "sub16", name: "Session Manager", type: "session" }
-    ],
-    parameters: [
-      { id: "param16", key: "diameter_host", value: "diameter.local", type: "string" },
-      { id: "param17", key: "realm", value: "example.com", type: "string" },
-      { id: "param18", key: "application_id", value: "16777238", type: "integer" }
-    ]
-  },
-  {
-    id: "9",
-    name: "Validation BLN Node",
-    type: "validation_bln",
-    deployment: "deployed",
-    createdDate: "2023-12-25",
-    createdBy: "Grace Kelly",
-    description: "Business Logic Node for data validation with dual outputs",
-    subnodes: [
-      { id: "sub17", name: "Rule Validator", type: "validation" },
-      { id: "sub18", name: "Error Handler", type: "error_handling" }
-    ],
-    parameters: [
-      { id: "param19", key: "validation_rules", value: "/rules/validation.json", type: "string" },
-      { id: "param20", key: "strict_validation", value: "false", type: "boolean" },
-      { id: "param21", key: "error_output", value: "separate", type: "string" }
-    ]
-  }
-];
+interface Node {
+  id: string;
+  name: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  last_updated_by: string | null;
+  last_updated_at: string;
+  subnodes: {
+    id: string;
+    name: string;
+    version: number;
+    is_selected: boolean;
+    parameters: {
+      id: string;
+      node: string;
+      key: string;
+      default_value: string;
+      required: boolean;
+      last_updated_by: string | null;
+      last_updated_at: string;
+    }[];
+  }[];
+}
 
 export function NodesPage() {
-  const [nodes, setNodes] = useState(mockNodes);
+  const [nodes, setNodes] = useState<Node[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchNodes();
+  }, []);
+
+  const fetchNodes = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get("http://127.0.0.1:8000/api/nodes/");
+      setNodes(response.data);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || "Failed to fetch nodes";
+      setError(errorMessage);
+      toast({
+        title: "Error Loading Nodes",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredNodes = nodes.filter(node =>
     node.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getDeploymentBadge = (deployment: string) => {
-    const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", className: string }> = {
-      deployed: { variant: "default", className: "bg-node-deployed text-white" },
-      not_deployed: { variant: "outline", className: "text-node-undeployed border-node-undeployed" },
-    };
-    return variants[deployment] || { variant: "outline", className: "" };
+  const handleDelete = async (nodeId: string) => {
+    try {
+      await axios.delete(`http://127.0.0.1:8000/api/nodes/${nodeId}/`);
+      setNodes(nodes.filter(node => node.id !== nodeId));
+      toast({
+        title: "Node Deleted",
+        description: "The node has been deleted successfully.",
+      });
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || "Failed to delete node";
+      toast({
+        title: "Error Deleting Node",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDelete = (nodeId: string) => {
-    setNodes(nodes.filter(node => node.id !== nodeId));
-  };
-
-  const handleExport = (node: any) => {
+  const handleExport = (node: Node) => {
     const dataStr = JSON.stringify(node, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
@@ -206,20 +104,46 @@ export function NodesPage() {
     link.click();
   };
 
-  const handleClone = (node: any) => {
-    const clonedNodeId = Date.now().toString();
-    const clonedNode = {
-      ...node,
-      id: clonedNodeId,
-      name: `${node.name} (Copy)`,
-      deployment: "not_deployed",
-      createdDate: new Date().toISOString().split('T')[0],
-      createdBy: "Current User"
-    };
-    setNodes([...nodes, clonedNode]);
-    // Redirect to node edit page with cloned configuration
-    navigate(`/nodes/${clonedNodeId}/edit`);
+  const handleClone = async (node: Node) => {
+    try {
+      const clonedNodeData = {
+        name: `${node.name} (Copy)`,
+        version: 1
+      };
+      const response = await axios.post("http://127.0.0.1:8000/api/nodes/", clonedNodeData);
+      await fetchNodes(); // Refresh the list
+      navigate(`/nodes/${response.data.id}/edit`);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || "Failed to clone node";
+      toast({
+        title: "Error Cloning Node",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading nodes...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">Error: {error}</p>
+          <Button onClick={fetchNodes}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -270,33 +194,25 @@ export function NodesPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-foreground text-sm flex items-center justify-between">
                   {node.name}
-                  <Badge 
-                    variant={getDeploymentBadge(node.deployment).variant}
-                    className={getDeploymentBadge(node.deployment).className}
-                  >
-                    {node.deployment === "deployed" ? "Deployed" : "Not Deployed"}
-                  </Badge>
+                  <Badge variant="outline">v{node.version}</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="text-muted-foreground">
-                    <span className="font-medium">Created:</span> {node.createdDate}
+                    <span className="font-medium">Created:</span> {new Date(node.created_at).toLocaleDateString()}
                   </div>
                   <div className="text-muted-foreground">
-                    <span className="font-medium">By:</span> {node.createdBy}
+                    <span className="font-medium">By:</span> {node.last_updated_by || "System"}
                   </div>
                 </div>
                 
                 <div className="space-y-1">
                   <div className="text-xs text-muted-foreground">
-                    <span className="font-medium">Status:</span>
-                    <Badge 
-                      variant={getDeploymentBadge(node.deployment).variant}
-                      className={`${getDeploymentBadge(node.deployment).className} ml-2 text-xs`}
-                    >
-                      {node.deployment === "deployed" ? "Deployed" : "Not Deployed"}
-                    </Badge>
+                    <span className="font-medium">Subnodes:</span> {node.subnodes.length}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    <span className="font-medium">Parameters:</span> {node.subnodes.reduce((total, subnode) => total + subnode.parameters.length, 0)}
                   </div>
                 </div>
                 
@@ -347,7 +263,7 @@ export function NodesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Deployment Status</TableHead>
+                <TableHead>Version</TableHead>
                 <TableHead>Created Date</TableHead>
                 <TableHead>Created By</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -358,15 +274,10 @@ export function NodesPage() {
                 <TableRow key={node.id}>
                   <TableCell className="font-medium">{node.name}</TableCell>
                   <TableCell>
-                    <Badge 
-                      variant={getDeploymentBadge(node.deployment).variant}
-                      className={getDeploymentBadge(node.deployment).className}
-                    >
-                      {node.deployment === "deployed" ? "Deployed" : "Not Deployed"}
-                    </Badge>
+                    <Badge variant="outline">v{node.version}</Badge>
                   </TableCell>
-                  <TableCell>{node.createdDate}</TableCell>
-                  <TableCell>{node.createdBy}</TableCell>
+                  <TableCell>{new Date(node.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell>{node.last_updated_by || "System"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end space-x-2">
                       <Button 

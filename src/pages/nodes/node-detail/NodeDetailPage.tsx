@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,73 +27,96 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
 
-// Mock data
-const mockNode = {
-  id: "1",
-  name: "User Data Processor",
-  scriptName: "process_user_data.py",
-  isDeployed: true,
-  lastUpdatedBy: "John Doe",
-  lastUpdatedAt: "2024-01-20 14:30:00",
-  version: "v1.2",
-  parameters: [
-    { id: "1", key: "threshold", valueType: "int", defaultValue: "10", subnodeOverrides: 3 },
-    { id: "2", key: "tag_prefix", valueType: "string", defaultValue: "user_", subnodeOverrides: 1 },
-    { id: "3", key: "enabled", valueType: "boolean", defaultValue: "true", subnodeOverrides: 0 },
-  ],
-  subnodes: [
-    { 
-      id: "1", 
-      name: "Data Validation", 
-      deploymentStatus: "deployed", 
-      scriptName: "validate.py"
-    },
-    { 
-      id: "2", 
-      name: "Data Transform", 
-      deploymentStatus: "not_deployed", 
-      scriptName: "transform.py"
-    },
-  ]
-};
+interface NodeDetail {
+  id: string;
+  name: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  last_updated_by: string | null;
+  last_updated_at: string;
+  subnodes: {
+    id: string;
+    name: string;
+    version: number;
+    is_selected: boolean;
+    parameters: {
+      id: string;
+      node: string;
+      key: string;
+      default_value: string;
+      required: boolean;
+      last_updated_by: string | null;
+      last_updated_at: string;
+    }[];
+  }[];
+}
 
 export function NodeDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [node, setNode] = useState(mockNode);
+  const { toast } = useToast();
+  const [node, setNode] = useState<NodeDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showVersionDialog, setShowVersionDialog] = useState(false);
 
-  const handleDeploy = () => {
-    setNode(prev => ({ ...prev, isDeployed: true }));
-  };
+  useEffect(() => {
+    if (id) {
+      fetchNode();
+    }
+  }, [id]);
 
-  const handleUndeploy = () => {
-    setNode(prev => ({ ...prev, isDeployed: false }));
-  };
-
-  const handleEdit = () => {
-    if (node.isDeployed) {
-      setShowVersionDialog(true);
-    } else {
-      navigate(`/nodes/${id}/edit`);
+  const fetchNode = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`http://127.0.0.1:8000/api/nodes/${id}/`);
+      setNode(response.data);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || "Failed to fetch node";
+      setError(errorMessage);
+      toast({
+        title: "Error Loading Node",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleCreateVersion = () => {
-    navigate(`/nodes/${id}/edit?version=new`);
-    setShowVersionDialog(false);
+  const handleEdit = () => {
+    navigate(`/nodes/${id}/edit`);
   };
 
   const handleVersionHistory = () => {
     navigate(`/nodes/${id}/versions`);
   };
 
-  const getStatusBadge = (status: string) => {
-    return status === "deployed" 
-      ? <Badge className="bg-green-500 text-white">🟢 Deployed</Badge>
-      : <Badge className="bg-red-500 text-white">🔴 Not Deployed</Badge>;
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading node details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !node) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">Error: {error || "Node not found"}</p>
+          <Button onClick={fetchNode}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -103,11 +126,7 @@ export function NodeDetailPage() {
           <div>
             <h1 className="text-3xl font-bold">📦 {node.name}</h1>
             <div className="flex items-center space-x-3 mt-2">
-              {node.isDeployed 
-                ? <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">🟢 Deployed</Badge>
-                : <Badge variant="secondary" className="bg-red-100 text-red-800 border-red-200">🔴 Not Deployed</Badge>
-              }
-              <Badge variant="outline">{node.version}</Badge>
+              <Badge variant="outline">v{node.version}</Badge>
             </div>
           </div>
           
@@ -116,19 +135,6 @@ export function NodeDetailPage() {
               <Edit className="h-4 w-4 mr-2" />
               Edit
             </Button>
-            
-            {!node.isDeployed && (
-              <Button onClick={handleDeploy}>
-                <Upload className="h-4 w-4 mr-2" />
-                Deploy
-              </Button>
-            )}
-            
-            {node.isDeployed && (
-              <Button variant="outline" onClick={handleUndeploy}>
-                Undeploy
-              </Button>
-            )}
             
             <Button variant="outline" onClick={handleVersionHistory}>
               <History className="h-4 w-4 mr-2" />
@@ -140,15 +146,15 @@ export function NodeDetailPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
             <h4 className="font-medium text-muted-foreground">Last Updated By</h4>
-            <p className="font-medium">{node.lastUpdatedBy}</p>
+            <p className="font-medium">{node.last_updated_by || "System"}</p>
           </div>
           <div>
             <h4 className="font-medium text-muted-foreground">Last Updated At</h4>
-            <p className="font-medium">{node.lastUpdatedAt}</p>
+            <p className="font-medium">{new Date(node.last_updated_at).toLocaleString()}</p>
           </div>
           <div>
             <h4 className="font-medium text-muted-foreground">Parameters</h4>
-            <p className="font-medium">{node.parameters.length}</p>
+            <p className="font-medium">{node.subnodes.reduce((total, subnode) => total + subnode.parameters.length, 0)}</p>
           </div>
           <div>
             <h4 className="font-medium text-muted-foreground">Subnodes</h4>
@@ -161,7 +167,7 @@ export function NodeDetailPage() {
       {/* Parameters Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Parameters ({node.parameters.length})</CardTitle>
+          <CardTitle>Parameters ({node.subnodes.reduce((total, subnode) => total + subnode.parameters.length, 0)})</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -169,31 +175,46 @@ export function NodeDetailPage() {
               <TableRow>
                 <TableHead>Key</TableHead>
                 <TableHead>Default Value</TableHead>
-                <TableHead>Value Type</TableHead>
-                <TableHead>Subnode Overrides</TableHead>
+                <TableHead>Required</TableHead>
+                <TableHead>Subnode</TableHead>
+                <TableHead>Last Updated</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {node.parameters.map((param) => (
-                <TableRow key={param.id}>
-                  <TableCell className="font-medium">{param.key}</TableCell>
-                  <TableCell>{param.defaultValue}</TableCell>
-                  <TableCell>{param.valueType}</TableCell>
-                  <TableCell>
-                    <Button 
-                      variant="link" 
-                      size="sm"
-                      onClick={() => navigate(`/parameters/${param.id}`)}
-                      className="h-auto p-0"
-                    >
-                      {param.subnodeOverrides} overrides
-                    </Button>
-                  </TableCell>
-                  <TableCell className="text-right">
-                  </TableCell>
-                </TableRow>
-              ))}
+              {node.subnodes.flatMap(subnode => 
+                subnode.parameters.map((param) => (
+                  <TableRow key={param.id}>
+                    <TableCell className="font-medium">{param.key}</TableCell>
+                    <TableCell>{param.default_value}</TableCell>
+                    <TableCell>
+                      <Badge variant={param.required ? "default" : "secondary"}>
+                        {param.required ? "Required" : "Optional"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button 
+                        variant="link" 
+                        size="sm"
+                        onClick={() => navigate(`/subnodes/${subnode.id}`)}
+                        className="h-auto p-0"
+                      >
+                        {subnode.name}
+                      </Button>
+                    </TableCell>
+                    <TableCell>{new Date(param.last_updated_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-right">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate(`/parameters/${param.id}`)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -209,8 +230,9 @@ export function NodeDetailPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Subnode Name</TableHead>
-                <TableHead>Script Name</TableHead>
-                <TableHead>Deployment Status</TableHead>
+                <TableHead>Version</TableHead>
+                <TableHead>Selected</TableHead>
+                <TableHead>Parameters</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -226,9 +248,21 @@ export function NodeDetailPage() {
                       {subnode.name}
                     </Button>
                   </TableCell>
-                  <TableCell>{subnode.scriptName}</TableCell>
-                  <TableCell>{getStatusBadge(subnode.deploymentStatus)}</TableCell>
+                  <TableCell>v{subnode.version}</TableCell>
+                  <TableCell>
+                    <Badge variant={subnode.is_selected ? "default" : "secondary"}>
+                      {subnode.is_selected ? "Selected" : "Not Selected"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{subnode.parameters.length} parameters</TableCell>
                   <TableCell className="text-right">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => navigate(`/subnodes/${subnode.id}`)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -237,25 +271,6 @@ export function NodeDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Version Dialog */}
-      <Dialog open={showVersionDialog} onOpenChange={setShowVersionDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Version</DialogTitle>
-            <DialogDescription>
-              This node is currently deployed. A new version will be created to edit. Do you want to continue?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowVersionDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateVersion}>
-              Create New Version
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
