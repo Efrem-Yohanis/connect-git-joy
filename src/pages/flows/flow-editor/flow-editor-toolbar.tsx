@@ -21,6 +21,7 @@ export function FlowEditorToolbar({
 
   const handleSave = () => {
     toast.success("Flow saved successfully!");
+    navigate("/flows");
   };
 
   const handleDeploy = () => {
@@ -42,17 +43,6 @@ export function FlowEditorToolbar({
   return (
     <div className="h-16 border-b border-border bg-background px-6 flex items-center justify-between">
       <div className="flex items-center space-x-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate("/flows")}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Flows
-        </Button>
-        
-        <div className="h-6 w-px bg-border" />
-        
         <Input
           value={flowName}
           onChange={(e) => onFlowNameChange(e.target.value)}
@@ -92,9 +82,6 @@ export function FlowEditorToolbar({
           Stop Flow
         </Button>
         
-        <Button variant="outline" size="sm" onClick={handleExport}>
-          📤 Export JSON
-        </Button>
       </div>
     </div>
   );

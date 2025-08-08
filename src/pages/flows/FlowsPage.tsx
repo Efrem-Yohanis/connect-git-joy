@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { Plus, Upload, Download, Trash2, Eye, Grid, List, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useItems } from '../apis/MockItemService'; // Using mock data for development
-import { deleteItem } from '../apis/MockItemService'; // Using mock delete function
+import { useItems } from '../apis/ItemService'; // Using real API data
+import { deleteItem } from '../apis/ItemService'; // Using real delete function
 
 import {
   Table,

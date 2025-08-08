@@ -2,6 +2,7 @@ import { Search, Settings, User, Moon, Sun } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,15 +12,46 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "next-themes";
+import { useSection } from "@/contexts/SectionContext";
 
 export function TopBar() {
   const { theme, setTheme } = useTheme();
+  const { currentSection, statusCounts } = useSection();
 
   return (
     <header className="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center justify-between px-6 h-full">
         <div className="flex items-center space-x-4">
           <SidebarTrigger className="h-9 w-9" />
+          
+          <div className="flex items-center space-x-4">
+            <h2 className="text-lg font-semibold text-foreground">
+              {currentSection}
+            </h2>
+            
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-muted-foreground">Deployed:</span>
+                <Badge variant="secondary" className="bg-success text-success-foreground">
+                  {statusCounts.deployed}
+                </Badge>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-muted-foreground">Running:</span>
+                <Badge variant="secondary" className="bg-primary text-primary-foreground">
+                  {statusCounts.running}
+                </Badge>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-muted-foreground">Drafted:</span>
+                <Badge variant="secondary" className="bg-muted text-muted-foreground">
+                  {statusCounts.drafted}
+                </Badge>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="flex items-center space-x-2">

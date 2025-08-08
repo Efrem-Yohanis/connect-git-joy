@@ -29,7 +29,7 @@ export function EditParameterPage() {
   const [formData, setFormData] = useState({
     key: "",
     defaultValue: "",
-    valueType: "string"
+    datatype: ""
   });
 
   // Load parameter data on mount
@@ -39,7 +39,7 @@ export function EditParameterPage() {
       setFormData({
         key: mockParameter.key,
         defaultValue: mockParameter.defaultValue,
-        valueType: mockParameter.valueType
+        datatype: mockParameter.valueType
       });
     }
   }, [id]);
@@ -121,21 +121,23 @@ export function EditParameterPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="valueType">Value Type</Label>
+            <Label htmlFor="datatype">Data Type</Label>
             <Select 
-              value={formData.valueType} 
-              onValueChange={(value) => handleInputChange('valueType', value)}
+              value={formData.datatype} 
+              onValueChange={(value) => handleInputChange('datatype', value)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select value type" />
+                <SelectValue placeholder="Select data type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="string">String</SelectItem>
-                <SelectItem value="int">Integer</SelectItem>
+                <SelectItem value="integer">Integer</SelectItem>
                 <SelectItem value="float">Float</SelectItem>
                 <SelectItem value="boolean">Boolean</SelectItem>
-                <SelectItem value="array">Array</SelectItem>
-                <SelectItem value="object">Object</SelectItem>
+                <SelectItem value="date">Date</SelectItem>
+                <SelectItem value="datetime">DateTime</SelectItem>
+                <SelectItem value="json">JSON</SelectItem>
+                <SelectItem value="file">File</SelectItem>
               </SelectContent>
             </Select>
           </div>

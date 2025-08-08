@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { flowService } from "@/services/flowService";
 
 interface CreateFlowDialogProps {
   open: boolean;
@@ -34,20 +35,21 @@ export function CreateFlowDialog({ open, onOpenChange }: CreateFlowDialogProps) 
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Generate a mock flow ID
-      const flowId = Date.now().toString();
+      // Create flow using the flow service
+      const createdFlow = await flowService.createFlow({
+        name: flowName.trim(),
+        description: flowDescription.trim(),
+      });
       
       toast.success("Flow created successfully!");
       onOpenChange(false);
       setFlowName("");
       setFlowDescription("");
       
-      // Navigate to flow editor with the new flow ID
-      navigate(`/flows/${flowId}/edit`, { state: { flowName, flowDescription, isEmpty: true } });
+      // Navigate to flow editor with the actual flow ID from API
+      navigate(`/flows/${createdFlow.id}/edit`);
     } catch (error) {
+      console.error('Error creating flow:', error);
       toast.error("Failed to create flow");
     } finally {
       setIsLoading(false);

@@ -14,8 +14,7 @@ import {
 import { 
   Download, 
   Trash2, 
-  Edit, 
-  Upload,
+  Edit,
   ExternalLink
 } from "lucide-react";
 import {
@@ -37,63 +36,41 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-// Mock data
-const mockSubnode = {
-  id: "1",
-  name: "Data Validation Subnode",
-  scriptName: "validate_data.py",
-  parentNode: "User Data Processor",
-  parentNodeId: "1",
-  isDeployed: true,
-  createdAt: "2024-01-16",
-  createdBy: "Jane Smith",
-  version: "v1",
-  parameters: [
-    { 
-      id: "1", 
-      key: "threshold", 
-      valueType: "int", 
-      overrideValue: "15",
-      defaultValue: "10"
-    },
-    { 
-      id: "2", 
-      key: "tag_prefix", 
-      valueType: "string", 
-      overrideValue: "validated_",
-      defaultValue: "user_"
-    },
-    { 
-      id: "3", 
-      key: "enabled", 
-      valueType: "boolean", 
-      overrideValue: "true",
-      defaultValue: "true"
-    },
-  ]
-};
+import { useSubnode, useSubnodeVersions, subnodeService } from "@/services/subnodeService";
+import { toast } from "sonner";
 
 export function SubnodeDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [subnode, setSubnode] = useState(mockSubnode);
   const [showVersionDialog, setShowVersionDialog] = useState(false);
+  
+  const { data: subnode, loading, error, refetch } = useSubnode(id || '');
+  const { data: versions, loading: versionsLoading } = useSubnodeVersions(id || '');
 
-  const handleDeploy = () => {
-    setSubnode(prev => ({ ...prev, isDeployed: true }));
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading subnode...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const handleUndeploy = () => {
-    setSubnode(prev => ({ ...prev, isDeployed: false }));
-  };
+  if (error || !subnode) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-destructive mb-4">Error loading subnode: {error}</p>
+          <Button onClick={() => refetch()}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
 
   const handleEdit = () => {
-    if (subnode.isDeployed) {
-      setShowVersionDialog(true);
-    } else {
-      navigate(`/subnodes/${id}/edit`);
-    }
+    navigate(`/subnodes/${id}/edit`);
   };
 
   const handleCreateVersion = () => {
@@ -101,8 +78,15 @@ export function SubnodeDetailPage() {
     setShowVersionDialog(false);
   };
 
-  const handleDelete = () => {
-    navigate('/subnodes');
+  const handleDelete = async () => {
+    try {
+      await subnodeService.deleteSubnode(id!);
+      toast.success("Subnode deleted successfully");
+      navigate('/subnodes');
+    } catch (error) {
+      toast.error("Failed to delete subnode");
+      console.error("Delete error:", error);
+    }
   };
 
   const handleExport = () => {
@@ -115,38 +99,50 @@ export function SubnodeDetailPage() {
     link.click();
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <h1 className="text-3xl font-bold">🧩 {subnode.name} ({subnode.version})</h1>
-          {subnode.isDeployed 
-            ? <Badge className="bg-green-500 text-white">🟢 Deployed</Badge>
-            : <Badge className="bg-red-500 text-white">🔴 Not Deployed</Badge>
-          }
+          <h1 className="text-3xl font-bold">🧩 {subnode.name} (v{subnode.version})</h1>
+          <Badge 
+            variant={subnode.is_selected ? "default" : "outline"}
+            className={subnode.is_selected ? "bg-green-500 text-white" : "text-muted-foreground"}
+          >
+            {subnode.is_selected ? "🟢 Selected" : "🔴 Not Selected"}
+          </Badge>
         </div>
         
         <div className="flex items-center space-x-2">
-          {!subnode.isDeployed && (
-            <Button onClick={handleDeploy}>
-              <Upload className="h-4 w-4 mr-2" />
-              Deploy
-            </Button>
-          )}
-          
-          {subnode.isDeployed && (
-            <Button variant="outline" onClick={handleUndeploy}>
-              <Download className="h-4 w-4 mr-2" />
-              Undeploy
-            </Button>
-          )}
-          
           <Button variant="outline" onClick={handleEdit}>
             <Edit className="h-4 w-4 mr-2" />
-            Edit (Create New Version)
+            Edit
           </Button>
           
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Subnode</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this subnode? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
@@ -158,74 +154,97 @@ export function SubnodeDetailPage() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <h4 className="font-semibold">Script Name</h4>
-              <p className="text-muted-foreground">{subnode.scriptName}</p>
+              <h4 className="font-semibold">Subnode ID</h4>
+              <p className="text-muted-foreground font-mono text-sm">{subnode.id}</p>
             </div>
             <div>
-              <h4 className="font-semibold">Parent Node</h4>
+              <h4 className="font-semibold">Parent Node ID</h4>
               <div className="flex items-center space-x-2">
-                <p className="text-muted-foreground">{subnode.parentNode}</p>
+                <p className="text-muted-foreground font-mono text-sm">{subnode.node}</p>
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => navigate(`/nodes/${subnode.parentNodeId}`)}
+                  onClick={() => navigate(`/nodes/${subnode.node}`)}
                 >
                   <ExternalLink className="h-3 w-3" />
                 </Button>
               </div>
             </div>
             <div>
+              <h4 className="font-semibold">Version</h4>
+              <p className="text-muted-foreground">{subnode.version}</p>
+            </div>
+            <div>
               <h4 className="font-semibold">Last Updated By</h4>
-              <p className="text-muted-foreground">{subnode.createdBy}</p>
+              <p className="text-muted-foreground">{subnode.last_updated_by || 'Unknown'}</p>
+            </div>
+            <div>
+              <h4 className="font-semibold">Created Date</h4>
+              <p className="text-muted-foreground">{formatDate(subnode.created_at)}</p>
             </div>
             <div>
               <h4 className="font-semibold">Last Modified Date</h4>
-              <p className="text-muted-foreground">{subnode.createdAt}</p>
+              <p className="text-muted-foreground">{formatDate(subnode.last_updated_at)}</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Parameters Section */}
+      {/* Versions Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Parameters (Inherited from Parent Node)</CardTitle>
+          <CardTitle>Versions</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Key</TableHead>
-                <TableHead>Value Type</TableHead>
-                <TableHead>Default Value</TableHead>
-                <TableHead>Override Value</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {subnode.parameters.map((param) => (
-                <TableRow key={param.id}>
-                  <TableCell className="font-medium">{param.key}</TableCell>
-                  <TableCell>{param.valueType}</TableCell>
-                  <TableCell>{param.defaultValue}</TableCell>
-                  <TableCell className="font-medium">
-                    {param.overrideValue !== param.defaultValue ? (
-                      <span className="text-blue-600">{param.overrideValue}</span>
-                    ) : (
-                      <span className="text-muted-foreground">{param.overrideValue}</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {param.overrideValue !== param.defaultValue ? (
-                      <Badge variant="secondary">🔧 Overridden</Badge>
-                    ) : (
-                      <Badge variant="outline">📋 Default</Badge>
-                    )}
-                  </TableCell>
+          {versionsLoading ? (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+              <p className="text-muted-foreground text-sm">Loading versions...</p>
+            </div>
+          ) : versions && versions.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Version</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {versions.map((version) => (
+                  <TableRow key={version.id}>
+                    <TableCell className="font-medium">v{version.version}</TableCell>
+                    <TableCell>
+                      <Badge variant={version.is_active ? "default" : "outline"}>
+                        {version.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {!version.is_active && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await subnodeService.activateVersion(id!, version.version);
+                              toast.success(`Version ${version.version} activated`);
+                              refetch();
+                            } catch (error) {
+                              toast.error("Failed to activate version");
+                            }
+                          }}
+                        >
+                          Activate
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <p className="text-muted-foreground text-center py-4">No versions found</p>
+          )}
         </CardContent>
       </Card>
 

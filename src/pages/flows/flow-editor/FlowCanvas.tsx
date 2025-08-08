@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -11,6 +11,7 @@ import {
   Edge,
   Node,
   BackgroundVariant,
+  useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -23,17 +24,57 @@ import { EnrichmentBlnNode } from './nodes/EnrichmentBlnNode';
 import { EncoderNode } from './nodes/EncoderNode';
 import { DiameterInterfaceNode } from './nodes/DiameterInterfaceNode';
 import { RawBackupNode } from './nodes/RawBackupNode';
+import { useNodes } from '../../../services/nodeService';
+import type { Node as ApiNode } from '../../../services/nodeService';
+import { flowService, useDeployedNodes } from '../../../services/flowService';
+import { useToast } from '../../../hooks/use-toast';
+import { useParams } from 'react-router-dom';
 
+// Use the updated SFTP Collector Node for all types for now since it has the best implementation
 const nodeTypes = {
   sftp_collector: SftpCollectorNode,
-  fdc: FdcNode,
-  asn1_decoder: Asn1DecoderNode,
-  ascii_decoder: AsciiDecoderNode,
-  validation_bln: ValidationBlnNode,
-  enrichment_bln: EnrichmentBlnNode,
-  encoder: EncoderNode,
-  diameter_interface: DiameterInterfaceNode,
-  raw_backup: RawBackupNode,
+  fdc: SftpCollectorNode,
+  asn1_decoder: SftpCollectorNode,
+  ascii_decoder: SftpCollectorNode,
+  validation_bln: SftpCollectorNode,
+  enrichment_bln: SftpCollectorNode,
+  encoder: SftpCollectorNode,
+  diameter_interface: SftpCollectorNode,
+  raw_backup: SftpCollectorNode,
+};
+
+// Transform API node data to React Flow format
+const transformApiNodesToFlowNodes = (apiNodes: ApiNode[]): Node[] => {
+  // Map to determine node type based on name or other properties
+  const getNodeType = (nodeName: string): string => {
+    const name = nodeName.toLowerCase();
+    if (name.includes('sftp') || name.includes('collector')) return 'sftp_collector';
+    if (name.includes('fdc')) return 'fdc';
+    if (name.includes('asn1') || name.includes('decoder')) return 'asn1_decoder';
+    if (name.includes('ascii')) return 'ascii_decoder';
+    if (name.includes('validation')) return 'validation_bln';
+    if (name.includes('enrichment')) return 'enrichment_bln';
+    if (name.includes('encoder')) return 'encoder';
+    if (name.includes('diameter')) return 'diameter_interface';
+    if (name.includes('backup')) return 'raw_backup';
+    return 'sftp_collector'; // Default fallback
+  };
+
+  return apiNodes.map((apiNode, index) => ({
+    id: apiNode.id,
+    type: getNodeType(apiNode.name),
+    position: { x: 100 + (index % 3) * 300, y: 100 + Math.floor(index / 3) * 250 },
+    data: {
+      label: apiNode.name,
+      subnodes: apiNode.subnodes || [],
+      version: apiNode.version,
+      last_updated_at: apiNode.last_updated_at,
+      description: `Node version ${apiNode.version}`,
+      nodeType: getNodeType(apiNode.name),
+      deployed: apiNode.subnodes.some(sub => sub.is_selected), // Consider deployed if any subnode is selected
+      parameters: apiNode.subnodes.flatMap(sub => sub.parameters || []),
+    },
+  }));
 };
 
 const initialNodes: Node[] = [
@@ -160,15 +201,73 @@ const initialEdges: Edge[] = [
 
 interface FlowCanvasProps {
   onNodeSelect: (node: Node | null) => void;
+  onNodeAdd?: (nodeId: string) => void;
 }
 
-export function FlowCanvas({ onNodeSelect }: FlowCanvasProps) {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+export function FlowCanvas({ onNodeSelect, onNodeAdd }: FlowCanvasProps) {
+  const { data: deployedNodes, loading, error } = useDeployedNodes();
+  const { toast } = useToast();
+  const { id: flowId } = useParams();
+  const reactFlowInstance = useReactFlow();
+  
+  // Start with empty nodes, will be populated from API
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
+  // Update nodes when API data is loaded
+  useEffect(() => {
+    console.log('Deployed nodes loaded:', { deployedNodes, loading, error });
+    
+    if (deployedNodes && deployedNodes.length > 0) {
+      console.log('Using deployed nodes:', deployedNodes);
+      // For now, start with mock nodes for demonstration
+      setNodes(initialNodes);
+    } else if (!loading && error) {
+      console.log('API error, using mock nodes:', error);
+      // Use mock nodes if API fails
+      setNodes(initialNodes);
+    } else if (!loading && deployedNodes?.length === 0) {
+      console.log('API returned empty, using mock nodes for demo');
+      // Use mock nodes if API returns empty for demo purposes
+      setNodes(initialNodes);
+    }
+  }, [deployedNodes, loading, error, setNodes]);
+
   const onConnect = useCallback(
-    (params: Edge | Connection) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges],
+    async (params: Edge | Connection) => {
+      // Add edge to local state
+      setEdges((eds) => addEdge(params, eds));
+      
+      // Update backend connection if we have flow ID
+      if (flowId && params.target) {
+        try {
+          // Find the target node data
+          const targetNode = nodes.find(n => n.id === params.target);
+          if (targetNode) {
+            // Here you would make API call to update the from_node field
+            // For now, we'll just log it
+            console.log('Updating connection in backend:', {
+              flowId,
+              targetNodeId: params.target,
+              sourceNodeId: params.source,
+            });
+            
+            toast({
+              title: "Connection Created",
+              description: "Nodes have been connected successfully.",
+            });
+          }
+        } catch (error) {
+          console.error('Error updating connection:', error);
+          toast({
+            title: "Connection Error",
+            description: "Failed to update connection in backend.",
+            variant: "destructive"
+          });
+        }
+      }
+    },
+    [setEdges, flowId, nodes, toast],
   );
 
   const onNodeClick = useCallback(
@@ -182,6 +281,94 @@ export function FlowCanvas({ onNodeSelect }: FlowCanvasProps) {
     onNodeSelect(null);
   }, [onNodeSelect]);
 
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback(
+    async (event: React.DragEvent) => {
+      event.preventDefault();
+
+      const nodeId = event.dataTransfer.getData('application/reactflow');
+      if (!nodeId || !flowId) return;
+
+      // Find the deployed node data
+      const deployedNode = deployedNodes?.find(n => n.id === nodeId);
+      if (!deployedNode) return;
+
+      // Get the drop position
+      const reactFlowBounds = reactFlowInstance.getViewport();
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      try {
+        // Calculate order (number of existing nodes + 1)
+        const order = nodes.length + 1;
+        
+        // Make API call to add node to flow
+        await flowService.addNodeToFlow({
+          flow: flowId,
+          node: nodeId,
+          order: order,
+        });
+
+        // Create visual node for canvas
+        const newNode: Node = {
+          id: `flow-node-${Date.now()}`,
+          type: getNodeType(deployedNode.name),
+          position: position,
+          data: {
+            label: deployedNode.name,
+            apiNodeId: nodeId, // Store reference to API node
+            subnodes: deployedNode.subnodes || [],
+            description: `Node with ${deployedNode.subnodes.length} subnodes`,
+            nodeType: getNodeType(deployedNode.name),
+            deployed: deployedNode.subnodes.some(sub => sub.is_selected),
+            parameters: deployedNode.subnodes.flatMap(sub => sub.parameters || []),
+          },
+        };
+
+        setNodes((nds) => nds.concat(newNode));
+        
+        toast({
+          title: "Node Added",
+          description: `${deployedNode.name} has been added to the flow.`,
+        });
+
+        // Notify parent component if callback provided
+        if (onNodeAdd) {
+          onNodeAdd(nodeId);
+        }
+      } catch (error) {
+        console.error('Error adding node to flow:', error);
+        toast({
+          title: "Error",
+          description: "Failed to add node to flow.",
+          variant: "destructive"
+        });
+      }
+    },
+    [reactFlowInstance, deployedNodes, flowId, nodes.length, setNodes, toast, onNodeAdd],
+  );
+
+  // Helper function to determine node type
+  const getNodeType = (nodeName: string): string => {
+    const name = nodeName.toLowerCase();
+    if (name.includes('sftp') || name.includes('collector')) return 'sftp_collector';
+    if (name.includes('fdc')) return 'fdc';
+    if (name.includes('asn1') || name.includes('decoder')) return 'asn1_decoder';
+    if (name.includes('ascii')) return 'ascii_decoder';
+    if (name.includes('validation')) return 'validation_bln';
+    if (name.includes('enrichment')) return 'enrichment_bln';
+    if (name.includes('encoder')) return 'encoder';
+    if (name.includes('diameter')) return 'diameter_interface';
+    if (name.includes('backup')) return 'raw_backup';
+    return 'sftp_collector'; // Default fallback
+  };
+
   return (
     <div className="flex-1 bg-canvas-background">
       <ReactFlow
@@ -192,6 +379,8 @@ export function FlowCanvas({ onNodeSelect }: FlowCanvasProps) {
         onConnect={onConnect}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
         nodeTypes={nodeTypes}
         fitView
         className="bg-canvas-background"
