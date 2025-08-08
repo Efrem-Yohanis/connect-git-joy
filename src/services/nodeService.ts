@@ -15,9 +15,20 @@ export interface Node {
   name: string;
   description?: string;
   subnodes?: any[];
-  version?: string;
-  last_updated_at?: string;
-  // Add other node properties as needed
+  version: number;
+  created_at: string;
+  updated_at: string;
+  last_updated_by: string | null;
+  last_updated_at: string;
+}
+
+export interface NodeVersion {
+  id: string;
+  version: number;
+  is_active: boolean;
+  created_by: string;
+  created_at: string;
+  description?: string;
 }
 
 // API Service Functions
@@ -33,6 +44,28 @@ export const nodeService = {
     const response = await axiosInstance.get(`nodes/${id}/`);
     return response.data;
   },
+
+  // Get node versions
+  async getNodeVersions(id: string): Promise<NodeVersion[]> {
+    const response = await axiosInstance.get(`nodes/${id}/versions/`);
+    return response.data;
+  },
+
+  // Activate node version
+  async activateNodeVersion(id: string, version: number): Promise<void> {
+    await axiosInstance.post(`nodes/${id}/activate-version/`, { version });
+  },
+
+  // Create new node version
+  async createNodeVersion(id: string, description?: string): Promise<NodeVersion> {
+    const response = await axiosInstance.post(`nodes/${id}/create-version/`, { description });
+    return response.data;
+  },
+
+  // Delete node
+  async deleteNode(id: string): Promise<void> {
+    await axiosInstance.delete(`nodes/${id}/`);
+  }
 };
 
 // Custom hook for nodes list

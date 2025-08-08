@@ -38,6 +38,9 @@ export interface SubnodeVersion {
   id: string;
   version: number;
   is_active: boolean;
+  created_by: string;
+  created_at: string;
+  description?: string;
 }
 
 export interface ParameterValueRequest {
@@ -100,6 +103,12 @@ export const subnodeService = {
   // Activate specific version
   async activateVersion(id: string, version: number): Promise<{ id: string; version: number; is_active: boolean }> {
     const response = await axiosInstance.post(`subnodes/${id}/activate-version/`, { version });
+    return response.data;
+  },
+
+  // Create new subnode version
+  async createSubnodeVersion(id: string, description?: string): Promise<SubnodeVersion> {
+    const response = await axiosInstance.post(`subnodes/${id}/create-version/`, { description });
     return response.data;
   },
 };
