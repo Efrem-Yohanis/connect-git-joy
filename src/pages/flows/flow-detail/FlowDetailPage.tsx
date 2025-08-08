@@ -109,14 +109,32 @@ export function FlowDetailPage() {
     return <div>No flow found.</div>;
   }
 
+  const getFlowStatus = () => {
+    if (flow.is_running) return "running";
+    if (flow.is_deployed) return "deployed";
+    return "draft";
+  };
+
   const getStatusBadge = () => {
-    if (flow.is_running) {
-      return <Badge className="bg-green-500 text-white">🟢 Running</Badge>;
-    } else if (flow.is_deployed) {
-      return <Badge className="bg-yellow-500 text-white">🟡 Deployed</Badge>;
-    } else {
-      return <Badge className="bg-red-500 text-white">🔴 Not Deployed</Badge>;
+    const status = getFlowStatus();
+    switch (status) {
+      case "running":
+        return <Badge variant="default">🟢 Running</Badge>;
+      case "deployed":
+        return <Badge variant="secondary">🟡 Deployed</Badge>;
+      case "draft":
+        return <Badge variant="outline">📝 Draft</Badge>;
+      default:
+        return <Badge variant="outline">❓ Unknown</Badge>;
     }
+  };
+
+  const canEdit = () => {
+    return !flow.is_deployed; // Only undeployed flows can be edited directly
+  };
+
+  const canStartStop = () => {
+    return flow.is_deployed; // Only deployed flows can be started/stopped
   };
 
   // Helper function to determine node type based on name or other criteria
@@ -220,6 +238,15 @@ export function FlowDetailPage() {
     }
   };
 
+  const handleCreateNewVersion = () => {
+    // For deployed flows, creating a new version means cloning to a new draft
+    toast({
+      title: "Creating New Version",
+      description: "This will create a new draft version that can be edited.",
+    });
+    navigate(`/flows/${id}/clone`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -228,19 +255,27 @@ export function FlowDetailPage() {
           {getStatusBadge()}
         </div>
         <div className="flex items-center space-x-2">
-          {flow.is_deployed && !flow.is_running && (
+          {canStartStop() && !flow.is_running && (
             <Button onClick={handleRunFlow}>
               <Play className="h-4 w-4 mr-2" />
-              Run
+              Start
             </Button>
           )}
-          {flow.is_running && (
+          {canStartStop() && flow.is_running && (
             <Button variant="destructive" onClick={handleStopFlow}>
               <Square className="h-4 w-4 mr-2" />
               Stop
             </Button>
           )}
-          <Button onClick={() => navigate(`/flows/${id}/edit`)}>Edit Flow</Button>
+          {canEdit() ? (
+            <Button onClick={() => navigate(`/flows/${id}/edit`)}>
+              Edit Flow
+            </Button>
+          ) : (
+            <Button onClick={() => handleCreateNewVersion()}>
+              Create New Version
+            </Button>
+          )}
         </div>
       </div>
 

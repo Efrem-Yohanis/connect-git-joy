@@ -51,20 +51,28 @@ export function FlowsPage() {
     flow.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatus = (isRunning: boolean) => {
-    return isRunning ? "running" : "stopped";
+  const getFlowStatus = (flow: any) => {
+    if (flow.is_running) return "running";
+    if (flow.is_deployed) return "deployed";
+    return "draft";
   };
 
-  const getStatusBadgeVariant = (isRunning: boolean): "default" | "secondary" => {
-    return isRunning ? "default" : "secondary";
+  const getStatusBadgeVariant = (status: string): "default" | "secondary" | "outline" => {
+    switch (status) {
+      case "running": return "default";
+      case "deployed": return "secondary";
+      case "draft": return "outline";
+      default: return "outline";
+    }
   };
 
-  const getDeploymentBadgeVariant = (isDeployed: boolean): "default" | "outline" => {
-    return isDeployed ? "default" : "outline";
-  };
-
-  const getDeploymentLabel = (isDeployed: boolean) => {
-    return isDeployed ? "Deployed" : "Not Deployed";
+  const getStatusDisplay = (status: string) => {
+    switch (status) {
+      case "running": return "🟢 Running";
+      case "deployed": return "🟡 Deployed";
+      case "draft": return "📝 Draft";
+      default: return "❓ Unknown";
+    }
   };
 
 const handleDelete = async (flowId: string) => {
@@ -166,7 +174,7 @@ const handleDelete = async (flowId: string) => {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Deployment</TableHead>
+                <TableHead>Version</TableHead>
                 <TableHead>Created Date</TableHead>
                 <TableHead>Created By</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -177,14 +185,12 @@ const handleDelete = async (flowId: string) => {
                 <TableRow key={flow.id}>
                   <TableCell className="font-medium">{flow.name}</TableCell>
                   <TableCell>
-                    <Badge variant={getStatusBadgeVariant(flow.is_running)}>
-                      {getStatus(flow.is_running)}
+                    <Badge variant={getStatusBadgeVariant(getFlowStatus(flow))}>
+                      {getStatusDisplay(getFlowStatus(flow))}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getDeploymentBadgeVariant(flow.is_deployed)}>
-                      {getDeploymentLabel(flow.is_deployed)}
-                    </Badge>
+                    <span className="text-sm text-muted-foreground">Version {flow.version}</span>
                   </TableCell>
                   <TableCell>{new Date(flow.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>{flow.created_by}</TableCell>
@@ -296,11 +302,11 @@ const handleDelete = async (flowId: string) => {
                 <p className="text-sm text-muted-foreground">{flow.description}</p>
                
                 <div className="flex items-center gap-2">
-                  <Badge variant={getStatusBadgeVariant(flow.is_running)}>
-                    {getStatus(flow.is_running)}
+                  <Badge variant={getStatusBadgeVariant(getFlowStatus(flow))}>
+                    {getStatusDisplay(getFlowStatus(flow))}
                   </Badge>
-                  <Badge variant={getDeploymentBadgeVariant(flow.is_deployed)}>
-                    {getDeploymentLabel(flow.is_deployed)}
+                  <Badge variant="outline" className="text-xs">
+                    v{flow.version}
                   </Badge>
                 </div>
                 <div className="text-sm text-muted-foreground space-y-1">
