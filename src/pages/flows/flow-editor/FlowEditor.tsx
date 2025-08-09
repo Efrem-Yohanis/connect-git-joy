@@ -116,6 +116,7 @@ export function FlowEditor() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [editingNode, setEditingNode] = useState<string | null>(null);
+  const [flowNodeMap, setFlowNodeMap] = useState<Map<string, string>>(new Map()); // Canvas node ID -> FlowNode ID mapping
 
   // Update flow data when loaded from API
   useEffect(() => {
@@ -147,25 +148,30 @@ export function FlowEditor() {
 
   const onConnect = useCallback(
     async (params: Connection) => {
-      // Add edge to local state
+      // Add edge to local state first
       setEdges((eds) => addEdge(params, eds));
       
-      // Update backend connection if we have flow ID
-      if (flowId && params.target) {
+      // Update backend connection if we have flow ID and target node
+      if (flowId && params.target && params.source) {
         try {
-          // Log the connection for now - API integration would go here
-          console.log('Updating connection in backend:', {
-            flowId,
-            targetNodeId: params.target,
-            sourceNodeId: params.source,
-          });
+          const targetFlowNodeId = flowNodeMap.get(params.target);
+          const sourceFlowNodeId = flowNodeMap.get(params.source);
           
-          toast({
-            title: "Connection Created",
-            description: "Nodes have been connected successfully.",
-          });
+          if (targetFlowNodeId) {
+            await flowService.updateFlowNodeConnection(targetFlowNodeId, sourceFlowNodeId || null);
+            
+            toast({
+              title: "Connection Created",
+              description: "Nodes have been connected successfully.",
+            });
+          }
         } catch (error) {
           console.error('Error updating connection:', error);
+          // Remove the edge from local state if backend update failed
+          setEdges((eds) => eds.filter(edge => 
+            !(edge.source === params.source && edge.target === params.target)
+          ));
+          
           toast({
             title: "Connection Error",
             description: "Failed to update connection in backend.",
@@ -174,11 +180,12 @@ export function FlowEditor() {
         }
       }
     },
-    [setEdges, flowId, toast],
+    [setEdges, flowId, flowNodeMap, toast],
   );
 
-  // Handle connector selection
-  const handleConnectorChange = useCallback((nodeId: string, connector: string) => {
+  // Handle connector (subnode) selection
+  const handleConnectorChange = useCallback(async (nodeId: string, connector: string) => {
+    // Update local state first
     setNodes((nds) =>
       nds.map((node) =>
         node.id === nodeId
@@ -192,7 +199,36 @@ export function FlowEditor() {
           : node
       )
     );
-  }, [setNodes]);
+
+    // Update backend if we have flowNode mapping
+    const flowNodeId = flowNodeMap.get(nodeId);
+    if (flowNodeId && flowId) {
+      try {
+        // Find the subnode ID by name
+        const node = nodes.find(n => n.id === nodeId);
+        if (node?.data.nodeId) {
+          const nodeData = await nodeService.getNode(node.data.nodeId);
+          const selectedSubnode = nodeData.subnodes?.find(s => s.name === connector);
+          
+          if (selectedSubnode) {
+            await flowService.updateFlowNodeSubnode(flowNodeId, selectedSubnode.id);
+            
+            toast({
+              title: "Subnode Updated",
+              description: `Selected subnode changed to ${connector}.`,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error updating subnode selection:', error);
+        toast({
+          title: "Update Error",
+          description: "Failed to update subnode selection.",
+          variant: "destructive"
+        });
+      }
+    }
+  }, [setNodes, flowNodeMap, flowId, nodes, toast]);
 
   // Add node to canvas from API data or drag and drop
   const addNodeToCanvas = async (nodeId: string, position?: { x: number; y: number }) => {
@@ -201,8 +237,9 @@ export function FlowEditor() {
       const nodeData = await nodeService.getNode(nodeId);
       
       // Create a visual node for the canvas
+      const canvasNodeId = `canvas-node-${Date.now()}`;
       const newNode: Node<NodeData> = {
-        id: `canvas-node-${Date.now()}`,
+        id: canvasNodeId,
         type: 'custom',
         position: position || { x: Math.random() * 300 + 200, y: Math.random() * 200 + 150 },
         data: {
@@ -215,21 +252,29 @@ export function FlowEditor() {
           nodeId: nodeId // Add the original node ID for subnode lookup
         },
       };
-      setNodes((prev) => [...prev, newNode]);
 
       // Add to flow via API using the new flownode endpoint
       if (flowId) {
-        await flowService.createFlowNode({
+        const flowNode = await flowService.createFlowNode({
           order: nodes.length + 1,
           node_id: nodeId,
           flow_id: flowId,
           from_node: null
         });
         
+        // Map canvas node to flownode for future API calls
+        setFlowNodeMap(prev => new Map(prev.set(canvasNodeId, flowNode.id)));
+        
+        // Add to local state after successful API call
+        setNodes((prev) => [...prev, newNode]);
+        
         toast({
           title: "Node Added",
           description: `${nodeData.name} has been added to the flow successfully.`,
         });
+      } else {
+        // Just add to canvas if no flow ID (for new flows)
+        setNodes((prev) => [...prev, newNode]);
       }
     } catch (error) {
       console.error('Error adding node to flow:', error);
@@ -423,22 +468,48 @@ export function FlowEditor() {
   const saveFlow = async () => {
     try {
       if (flowId) {
+        // Validate flow before saving
+        const validation = await flowService.validateFlow(flowId);
+        
+        if (!validation.valid) {
+          toast({
+            title: "Validation Failed",
+            description: validation.errors?.join(', ') || "Flow has validation errors that need to be fixed.",
+            variant: "destructive"
+          });
+          return;
+        }
+
         // Update existing flow
         await flowService.updateFlow(flowId, {
           name: currentFlow.name,
           description: currentFlow.name, // Could be separate field
-          // Add other flow properties as needed
         });
+        
+        toast({
+          title: "Flow Saved",
+          description: `${currentFlow.name} has been validated and saved successfully.`,
+        });
+        
+        // Redirect to flow management page
+        navigate('/flows');
       } else {
-        // Create new flow - this would need API endpoint
-        console.log('Creating new flow with nodes:', nodes);
+        // Create new flow first, then add nodes
+        const newFlow = await flowService.createFlow({
+          name: currentFlow.name,
+          description: currentFlow.name,
+        });
+        
+        // For new flows, we'd need to handle node creation here
+        toast({
+          title: "Flow Created",
+          description: `${currentFlow.name} has been created successfully.`,
+        });
+        
+        navigate(`/flows/${newFlow.id}/edit`);
       }
       
       updateCurrentFlow();
-      toast({
-        title: "Flow Saved",
-        description: `${currentFlow.name} has been saved as draft successfully.`,
-      });
     } catch (error) {
       console.error('Error saving flow:', error);
       toast({
@@ -493,15 +564,49 @@ export function FlowEditor() {
             <Icon className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium text-foreground">{data.label}</span>
           </div>
-          <Button
-            onClick={() => handleNodeEdit(id)}
-            size="sm"
-            variant="ghost"
-            className="h-6 w-6 p-0 hover:bg-muted"
-          >
-            <Settings className="h-3 w-3" />
-          </Button>
-        </div>
+            <div className="flex gap-1">
+              <Button
+                onClick={() => handleNodeEdit(id)}
+                size="sm"
+                variant="ghost"
+                className="h-6 w-6 p-0 hover:bg-muted"
+              >
+                <Settings className="h-3 w-3" />
+              </Button>
+              <Button
+                onClick={async () => {
+                  const flowNodeId = flowNodeMap.get(id);
+                  if (flowNodeId) {
+                    try {
+                      await flowService.deleteFlowNode(flowNodeId);
+                      setNodes((nds) => nds.filter(node => node.id !== id));
+                      setFlowNodeMap(prev => {
+                        const newMap = new Map(prev);
+                        newMap.delete(id);
+                        return newMap;
+                      });
+                      toast({
+                        title: "Node Removed",
+                        description: "Node has been removed from the flow.",
+                      });
+                    } catch (error) {
+                      console.error('Error deleting node:', error);
+                      toast({
+                        title: "Delete Error",
+                        description: "Failed to remove node from flow.",
+                        variant: "destructive"
+                      });
+                    }
+                  }
+                }}
+                size="sm"
+                variant="ghost"
+                className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
+              >
+                <AlertCircle className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
         
         <p className="text-xs text-muted-foreground mb-3">{data.description}</p>
         

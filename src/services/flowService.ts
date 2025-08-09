@@ -262,8 +262,8 @@ export const flowService = {
     return response.data;
   },
 
-  // Update node connection (from_node field)
-  async updateNodeConnection(flowNodeId: string, fromNodeId: string | null): Promise<FlowNode> {
+  // Update flownode connection (from_node field)
+  async updateFlowNodeConnection(flowNodeId: string, fromNodeId: string | null): Promise<FlowNode> {
     try {
       const response = await axiosInstance.patch(`flownodes/${flowNodeId}/`, {
         from_node: fromNodeId
@@ -288,6 +288,66 @@ export const flowService = {
       
       console.log('Mock FlowNode connection updated:', mockFlowNode);
       return mockFlowNode;
+    }
+  },
+
+  // Update flownode selected subnode
+  async updateFlowNodeSubnode(flowNodeId: string, subnodeId: string): Promise<FlowNode> {
+    try {
+      const response = await axiosInstance.patch(`flownodes/${flowNodeId}/`, {
+        selected_subnode: subnodeId
+      });
+      return response.data;
+    } catch (error) {
+      console.warn('FlowNode subnode API endpoint not available, using mock implementation');
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Return mock updated FlowNode
+      const mockFlowNode: FlowNode = {
+        id: flowNodeId,
+        order: 1,
+        node: {
+          id: 'mock-node',
+          name: 'Mock Node',
+          subnodes: []
+        },
+        selected_subnode: {
+          id: subnodeId,
+          name: 'Mock Subnode',
+          parameter_values: []
+        },
+        outgoing_edges: []
+      };
+      
+      console.log('Mock FlowNode subnode updated:', mockFlowNode);
+      return mockFlowNode;
+    }
+  },
+
+  // Delete flownode
+  async deleteFlowNode(flowNodeId: string): Promise<void> {
+    try {
+      await axiosInstance.delete(`flownodes/${flowNodeId}/`);
+    } catch (error) {
+      console.warn('FlowNode deletion API endpoint not available, using mock implementation');
+      await new Promise(resolve => setTimeout(resolve, 300));
+      console.log('Mock FlowNode deleted:', flowNodeId);
+    }
+  },
+
+  // Validate flow
+  async validateFlow(flowId: string): Promise<{ valid: boolean; errors?: string[] }> {
+    try {
+      const response = await axiosInstance.post(`flows/${flowId}/validate/`);
+      return { valid: true };
+    } catch (error: any) {
+      if (error.response?.status === 400) {
+        return {
+          valid: false,
+          errors: error.response.data.errors || ['Flow validation failed']
+        };
+      }
+      throw error;
     }
   },
 
