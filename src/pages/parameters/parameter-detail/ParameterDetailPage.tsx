@@ -133,25 +133,6 @@ export function ParameterDetailPage() {
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-          <div>
-            <h4 className="font-medium text-muted-foreground">Node ID</h4>
-            <Button 
-              variant="link" 
-              className="h-auto p-0 font-medium"
-              onClick={() => navigate(`/nodes/${parameter.node}`)}
-            >
-              {parameter.node}
-              <ExternalLink className="h-3 w-3 ml-1" />
-            </Button>
-          </div>
-          <div>
-            <h4 className="font-medium text-muted-foreground">Last Updated By</h4>
-            <p className="font-medium">{parameter.last_updated_by || 'System'}</p>
-          </div>
-          <div>
-            <h4 className="font-medium text-muted-foreground">Last Updated At</h4>
-            <p className="font-medium">{new Date(parameter.last_updated_at).toLocaleString()}</p>
-          </div>
         </div>
       </div>
 
@@ -177,15 +158,10 @@ export function ParameterDetailPage() {
               </Badge>
             </div>
             <div>
-              <span className="font-medium text-muted-foreground">Associated Node:</span>
-              <Button 
-                variant="link" 
-                className="h-auto p-0 font-medium ml-2"
-                onClick={() => navigate(`/nodes/${parameter.node}`)}
-              >
-                {parameter.node}
-                <ExternalLink className="h-3 w-3 ml-1" />
-              </Button>
+              <span className="font-medium text-muted-foreground">Data Type:</span>
+              <Badge variant="outline" className="ml-2">
+                {parameter.datatype}
+              </Badge>
             </div>
           </div>
         </CardContent>

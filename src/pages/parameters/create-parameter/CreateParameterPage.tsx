@@ -44,8 +44,7 @@ export function CreateParameterPage() {
         key: formData.key,
         default_value: formData.default_value,
         required: formData.required,
-        node: formData.node,
-        datatype: formData.datatype || null,
+        datatype: formData.datatype || "string",
       });
 
       toast({

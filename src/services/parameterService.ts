@@ -12,18 +12,22 @@ const axiosInstance = axios.create({
 // Parameter interfaces based on the API documentation
 export interface Parameter {
   id: string;
-  node: string;
   key: string;
   default_value: string;
   required: boolean;
-  datatype: string | null;
-  last_updated_by: string | null;
-  last_updated_at: string;
+  datatype: string;
+}
+
+export interface CreateParameterRequest {
+  key: string;
+  default_value: string;
+  required: boolean;
+  datatype: string;
 }
 
 // API Service Functions
 export const parameterService = {
-  // Get all parameters
+  // List all parameters
   async getParameters(): Promise<Parameter[]> {
     const response = await axiosInstance.get('parameters/');
     return response.data;
@@ -36,14 +40,14 @@ export const parameterService = {
   },
 
   // Create new parameter
-  async createParameter(data: Omit<Parameter, 'id' | 'last_updated_by' | 'last_updated_at'>): Promise<Parameter> {
+  async createParameter(data: CreateParameterRequest): Promise<Parameter> {
     const response = await axiosInstance.post('parameters/', data);
     return response.data;
   },
 
-  // Update parameter
-  async updateParameter(id: string, data: Partial<Parameter>): Promise<Parameter> {
-    const response = await axiosInstance.put(`parameters/${id}/`, data);
+  // Update parameter (partial update)
+  async updateParameter(id: string, data: Partial<CreateParameterRequest>): Promise<Parameter> {
+    const response = await axiosInstance.patch(`parameters/${id}/`, data);
     return response.data;
   },
 
