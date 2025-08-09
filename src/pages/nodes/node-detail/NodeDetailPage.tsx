@@ -143,7 +143,7 @@ export function NodeDetailPage() {
 
   const activateSubnodeVersion = async (subnodeId: string, version: number) => {
     try {
-      await subnodeService.activateVersion(subnodeId, version);
+      await subnodeService.activateVersion(subnodeId, { version });
       
       setSubnodeVersions(prev => ({
         ...prev,

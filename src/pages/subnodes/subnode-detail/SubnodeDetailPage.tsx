@@ -278,7 +278,7 @@ export function SubnodeDetailPage() {
                             size="sm"
                             onClick={async () => {
                               try {
-                                await subnodeService.activateVersion(id!, version.version);
+                                await subnodeService.activateVersion(id!, { version: version.version });
                                 toast.success(`Version ${version.version} activated`);
                                 refetch();
                                 refetchVersions();
