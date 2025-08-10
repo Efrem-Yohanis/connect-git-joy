@@ -136,9 +136,15 @@ export function SubnodeDetailPage() {
         toast.error("Invalid version data returned from server");
         await refetch();
       }
-    } catch (error) {
-      toast.error("Failed to create new version");
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.detail || 
+                          error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          "Failed to create new version";
+      toast.error(errorMessage);
       console.error("Create version error:", error);
+      console.error("Error response data:", error.response?.data);
     } finally {
       setIsLoading(false);
     }
