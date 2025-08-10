@@ -25,7 +25,7 @@ export function SubnodeHeader({
   isLoading = false
 }: SubnodeHeaderProps) {
   const isActiveVersion = selectedVersion?.is_deployed;
-  const canEdit = selectedVersion && !selectedVersion.is_deployed;
+  const canEdit = selectedVersion && !selectedVersion.is_deployed && selectedVersion.is_editable;
 
   return (
     <div className="space-y-4">

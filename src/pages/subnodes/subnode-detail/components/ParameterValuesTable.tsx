@@ -21,7 +21,7 @@ export function ParameterValuesTable({ selectedVersion }: ParameterValuesTablePr
       : Object.entries(selectedVersion.parameter_values).map(([key, value]) => ({ 
           id: key, 
           parameter_key: key, 
-          value: value 
+          value: String(value || '') 
         }))
     : [];
 
@@ -46,7 +46,7 @@ export function ParameterValuesTable({ selectedVersion }: ParameterValuesTablePr
                     {param.parameter_key}
                   </TableCell>
                   <TableCell className="font-mono text-sm bg-muted/30 px-2 py-1 rounded">
-                    {param.value || <span className="text-muted-foreground italic">Empty</span>}
+                    {param.value ? String(param.value) : <span className="text-muted-foreground italic">Empty</span>}
                   </TableCell>
                 </TableRow>
               ))}

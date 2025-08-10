@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useSubnode, subnodeService, SubnodeVersion } from "@/services/subnodeService";
 import { toast } from "sonner";
 import { SubnodeHeader } from "./components/SubnodeHeader";
@@ -17,10 +17,22 @@ export function SubnodeDetailPage() {
   const [isLoading, setIsLoading] = useState(false);
   
   const { data: subnode, loading, error, refetch } = useSubnode(id || '');
+  const [searchParams] = useSearchParams();
+  const versionParam = searchParams.get('version');
 
   // Set initial version when subnode data loads
   useEffect(() => {
     if (subnode && subnode.versions.length > 0) {
+      // If version is specified in URL, try to find and select it
+      if (versionParam) {
+        const versionNumber = parseInt(versionParam);
+        const targetVersion = subnode.versions.find(v => v.version === versionNumber);
+        if (targetVersion) {
+          setSelectedVersion(targetVersion);
+          return;
+        }
+      }
+      
       // Find the active version first
       const activeVersion = subnode.versions.find(v => v.is_deployed);
       if (activeVersion) {
@@ -31,7 +43,7 @@ export function SubnodeDetailPage() {
         setSelectedVersion(sortedVersions[0]);
       }
     }
-  }, [subnode]);
+  }, [subnode, versionParam]);
 
   if (loading) {
     return (
@@ -108,11 +120,18 @@ export function SubnodeDetailPage() {
       const response = await subnodeService.createEditableVersion(id!, { version_comment: comment });
       console.log("New version created:", response); // Debug log
       
-      // The API returns version info directly
-      if (response.version && !isNaN(response.version)) {
-        toast.success(`New version ${response.version} created successfully`);
-        setShowCreateVersionModal(false);
-        navigate(`/subnodes/${id}/edit-version?version=${response.version}`);
+      // The API returns full subnode detail with all versions
+      if (response.versions && response.versions.length > 0) {
+        // Find the newly created editable version
+        const newVersion = response.versions.find(v => v.is_editable && !v.is_deployed);
+        if (newVersion) {
+          toast.success(`New version ${newVersion.version} created successfully`);
+          setShowCreateVersionModal(false);
+          navigate(`/subnodes/${id}/edit-version?version=${newVersion.version}`);
+        } else {
+          toast.error("Could not find the newly created version");
+          await refetch();
+        }
       } else {
         toast.error("Invalid version data returned from server");
         await refetch();

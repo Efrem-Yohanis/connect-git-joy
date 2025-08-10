@@ -82,7 +82,7 @@ export function EditVersionPage() {
       
       await subnodeService.updateParameterValues(versionDetail.id, updateData);
       toast.success("Parameter values updated successfully");
-      navigate(`/subnodes/${id}`);
+      navigate(`/subnodes/${id}?version=${versionDetail.version}`);
     } catch (error) {
       toast.error("Failed to update parameter values");
       console.error("Update error:", error);

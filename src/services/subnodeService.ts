@@ -43,8 +43,8 @@ export interface SubnodeVersion {
   is_editable: boolean;
   updated_at: string;
   updated_by: string;
-  version_comment: string;
-  parameter_values: { [key: string]: string };
+  version_comment: string | null;
+  parameter_values: ParameterValue[];
 }
 
 export interface CreateSubnodeRequest {
@@ -140,7 +140,7 @@ export const subnodeService = {
   },
 
   // Create editable version from active
-  async createEditableVersion(id: string, data: CreateEditableVersionRequest): Promise<{ id: string; version: number; is_deployed: boolean; message: string }> {
+  async createEditableVersion(id: string, data: CreateEditableVersionRequest): Promise<SubnodeDetail> {
     const response = await axiosInstance.post(`subnodes/${id}/create_editable_version/`, data);
     return response.data;
   },
