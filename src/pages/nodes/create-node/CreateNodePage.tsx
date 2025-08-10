@@ -191,12 +191,11 @@ export function CreateNodePage() {
       {/* Node Parameters */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Node Parameters</CardTitle>
-            <div className="flex gap-2">
+            <div className="flex items-center justify-between">
+              <CardTitle>Node Parameters</CardTitle>
               <Select onValueChange={addExistingParameter}>
                 <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select existing parameter" />
+                  <SelectValue placeholder="Attach existing parameter" />
                 </SelectTrigger>
                 <SelectContent>
                   {mockExistingParameters.map((param) => (
@@ -206,12 +205,7 @@ export function CreateNodePage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button onClick={addParameter} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add New
-              </Button>
             </div>
-          </div>
         </CardHeader>
         <CardContent>
           {nodeParameters.length === 0 ? (
@@ -259,51 +253,6 @@ export function CreateNodePage() {
         </CardContent>
       </Card>
 
-      {/* SubNodes */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>SubNodes (Optional)</CardTitle>
-            <Select onValueChange={addSubnode}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Select subnode" />
-              </SelectTrigger>
-              <SelectContent>
-                {mockActiveSubnodes
-                  .filter(subnode => !selectedSubnodes.includes(subnode.id))
-                  .map((subnode) => (
-                    <SelectItem key={subnode.id} value={subnode.id}>
-                      {subnode.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {selectedSubnodes.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">No subnodes selected yet</p>
-          ) : (
-            <div className="space-y-3">
-              {selectedSubnodes.map((subnodeId) => {
-                const subnode = mockActiveSubnodes.find(s => s.id === subnodeId);
-                return (
-                  <div key={subnodeId} className="flex items-center justify-between p-3 border rounded-lg">
-                    <span className="font-medium">{subnode?.name}</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeSubnode(subnodeId)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Action Buttons */}
       <div className="flex items-center justify-end space-x-4">

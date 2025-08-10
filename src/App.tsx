@@ -17,6 +17,7 @@ import { EditNodePage } from "@/pages/nodes/edit-node/EditNodePage";
 import { SubnodesPage } from "@/pages/subnodes/SubnodesPage";
 import { SubnodeDetailPage } from "@/pages/subnodes/subnode-detail/SubnodeDetailPage";
 import { EditSubnodePage } from "@/pages/subnodes/edit-subnode/EditSubnodePage";
+import { EditVersionPage } from "@/pages/subnodes/edit-version/EditVersionPage";
 import { CreateSubnodePage } from "@/pages/subnodes/create-subnode/CreateSubnodePage";
 import { ParametersPage } from "@/pages/parameters/ParametersPage";
 import { ParameterDetailPage } from "@/pages/parameters/parameter-detail/ParameterDetailPage";
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="/subnodes/:id" element={<SubnodeDetailPage />} />
             <Route path="/subnodes/create" element={<CreateSubnodePage />} />
             <Route path="/subnodes/:id/edit" element={<EditSubnodePage />} />
+            <Route path="/subnodes/:id/edit-version" element={<EditVersionPage />} />
               <Route path="/parameters" element={<ParametersPage />} />
               <Route path="/parameters/new" element={<CreateParameterPage />} />
               <Route path="/parameters/:id" element={<ParameterDetailPage />} />

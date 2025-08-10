@@ -12,10 +12,12 @@ const axiosInstance = axios.create({
 // Parameter interfaces based on the API documentation
 export interface Parameter {
   id: string;
+  node: string;
   key: string;
   default_value: string;
   required: boolean;
-  datatype: string;
+  last_updated_by: string | null;
+  last_updated_at: string;
 }
 
 export interface CreateParameterRequest {

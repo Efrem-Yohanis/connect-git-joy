@@ -41,7 +41,7 @@ export function ParametersPage() {
         key: `${param.key}_copy`,
         default_value: param.default_value,
         required: param.required,
-        datatype: param.datatype
+        datatype: "string"
       });
       toast({
         title: "Parameter cloned successfully",
@@ -131,8 +131,8 @@ export function ParametersPage() {
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-1 gap-2 text-xs">
                   <div className="text-muted-foreground">
-                    <span className="font-medium">Data Type:</span> 
-                    <span className="ml-1 font-mono">{param.datatype}</span>
+                    <span className="font-medium">Default Value:</span> 
+                    <span className="ml-1 font-mono">{param.default_value || 'None'}</span>
                   </div>
                 </div>
                 
@@ -180,7 +180,7 @@ export function ParametersPage() {
               <TableRow>
                 <TableHead>Key</TableHead>
                 <TableHead>Default Value</TableHead>
-                <TableHead>Data Type</TableHead>
+                <TableHead>Node</TableHead>
                 <TableHead>Required</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -200,7 +200,7 @@ export function ParametersPage() {
                   <TableCell>{param.default_value}</TableCell>
                   <TableCell>
                     <Badge variant="outline">
-                      {param.datatype || 'Not Set'}
+                      {param.node}
                     </Badge>
                   </TableCell>
                   <TableCell>

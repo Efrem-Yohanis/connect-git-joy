@@ -49,8 +49,8 @@ export function SubnodesPage() {
     subnode.node.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getDeploymentBadge = (isSelected: boolean) => {
-    return isSelected 
+  const getDeploymentBadge = (activeVersion: number | null) => {
+    return activeVersion 
       ? { variant: "default" as const, className: "bg-node-deployed text-white" }
       : { variant: "outline" as const, className: "text-node-undeployed border-node-undeployed" };
   };
@@ -135,10 +135,10 @@ export function SubnodesPage() {
                 <CardTitle className="text-foreground text-sm flex items-center justify-between">
                   {subnode.name}
                   <Badge 
-                    variant={getDeploymentBadge(subnode.is_selected).variant}
-                    className={getDeploymentBadge(subnode.is_selected).className}
+                    variant={getDeploymentBadge(subnode.active_version).variant}
+                    className={getDeploymentBadge(subnode.active_version).className}
                   >
-                    {subnode.is_selected ? "Selected" : "Not Selected"}
+                    {subnode.active_version ? "Active" : "Inactive"}
                   </Badge>
                 </CardTitle>
               </CardHeader>
@@ -149,8 +149,8 @@ export function SubnodesPage() {
                     <Badge variant="outline" className="ml-2">{subnode.node}</Badge>
                   </div>
                   <div className="text-muted-foreground">
-                    <span className="font-medium">Version:</span> 
-                    <span className="ml-1">{subnode.version}</span>
+                    <span className="font-medium">Active Version:</span> 
+                    <span className="ml-1">{subnode.active_version || 'None'}</span>
                   </div>
                 </div>
                 
@@ -225,13 +225,13 @@ export function SubnodesPage() {
                   <TableCell>
                     <Badge variant="outline">{subnode.node}</Badge>
                   </TableCell>
-                  <TableCell className="text-sm">{subnode.version}</TableCell>
+                  <TableCell className="text-sm">{subnode.active_version || 'None'}</TableCell>
                   <TableCell>
                     <Badge 
-                      variant={getDeploymentBadge(subnode.is_selected).variant}
-                      className={getDeploymentBadge(subnode.is_selected).className}
+                      variant={getDeploymentBadge(subnode.active_version).variant}
+                      className={getDeploymentBadge(subnode.active_version).className}
                     >
-                      {subnode.is_selected ? "Selected" : "Not Selected"}
+                      {subnode.active_version ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>
                   <TableCell>{formatDate(subnode.created_at)}</TableCell>

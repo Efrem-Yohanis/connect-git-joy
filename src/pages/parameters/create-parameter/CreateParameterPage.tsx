@@ -20,7 +20,6 @@ export function CreateParameterPage() {
     key: "",
     default_value: "",
     required: true,
-    node: "",
     datatype: "",
   });
 
@@ -29,10 +28,10 @@ export function CreateParameterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.key || !formData.node) {
+    if (!formData.key) {
       toast({
         title: "Validation Error",
-        description: "Parameter key and node are required.",
+        description: "Parameter key is required.",
         variant: "destructive",
       });
       return;
@@ -120,25 +119,6 @@ export function CreateParameterPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="node">Associated Node *</Label>
-              <Select 
-                value={formData.node} 
-                onValueChange={(value) => handleInputChange("node", value)}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a node" />
-                </SelectTrigger>
-                <SelectContent>
-                  {nodes.map((node) => (
-                    <SelectItem key={node.id} value={node.id}>
-                      {node.name} ({node.id})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="datatype">Data Type</Label>

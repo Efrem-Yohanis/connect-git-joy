@@ -65,6 +65,16 @@ export const nodeService = {
   // Delete node
   async deleteNode(id: string): Promise<void> {
     await axiosInstance.delete(`nodes/${id}/`);
+  },
+
+  // Add parameters to a node
+  async addParametersToNode(id: string, parameterIds: string[]): Promise<void> {
+    await axiosInstance.post(`nodes/${id}/add_parameter/`, { parameter_ids: parameterIds });
+  },
+
+  // Remove parameters from a node
+  async removeParametersFromNode(id: string, parameterIds: string[]): Promise<void> {
+    await axiosInstance.delete(`nodes/${id}/remove-parameter/`, { data: { parameter_ids: parameterIds } });
   }
 };
 
@@ -101,6 +111,51 @@ export const useNodes = () => {
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.error || err.message || 'Error fetching nodes');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { data, loading, error, refetch };
+};
+
+// Custom hook for single node
+export const useNode = (id: string) => {
+  const [data, setData] = useState<Node | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const loadNode = async () => {
+      try {
+        setLoading(true);
+        const node = await nodeService.getNode(id);
+        setData(node);
+        setError(null);
+      } catch (err: any) {
+        setError(err.response?.data?.error || err.message || 'Error fetching node');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadNode();
+  }, [id]);
+
+  const refetch = async () => {
+    if (!id) return;
+    
+    setLoading(true);
+    try {
+      const node = await nodeService.getNode(id);
+      setData(node);
+      setError(null);
+    } catch (err: any) {
+      setError(err.response?.data?.error || err.message || 'Error fetching node');
       console.error(err);
     } finally {
       setLoading(false);

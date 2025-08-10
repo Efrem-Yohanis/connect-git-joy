@@ -158,9 +158,9 @@ export function ParameterDetailPage() {
               </Badge>
             </div>
             <div>
-              <span className="font-medium text-muted-foreground">Data Type:</span>
+              <span className="font-medium text-muted-foreground">Associated Node:</span>
               <Badge variant="outline" className="ml-2">
-                {parameter.datatype}
+                {parameter.node}
               </Badge>
             </div>
           </div>

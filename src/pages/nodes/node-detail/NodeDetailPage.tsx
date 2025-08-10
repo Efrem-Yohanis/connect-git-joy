@@ -80,7 +80,8 @@ export function NodeDetailPage() {
     
     setSubnodeVersionsLoading(prev => ({ ...prev, [subnodeId]: true }));
     try {
-      const versions = await subnodeService.getSubnodeVersions(subnodeId);
+    const subnodeData = await subnodeService.getSubnode(subnodeId);
+    const versions = subnodeData.versions;
       setSubnodeVersions(prev => ({ ...prev, [subnodeId]: versions }));
     } catch (err: any) {
       console.error('Error fetching subnode versions:', err);
@@ -143,7 +144,7 @@ export function NodeDetailPage() {
 
   const activateSubnodeVersion = async (subnodeId: string, version: number) => {
     try {
-      await subnodeService.activateVersion(subnodeId, { version });
+      await subnodeService.activateVersion(subnodeId, version);
       
       setSubnodeVersions(prev => ({
         ...prev,
