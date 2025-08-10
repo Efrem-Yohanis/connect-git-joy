@@ -31,6 +31,12 @@ export interface NodeVersion {
   description?: string;
 }
 
+export interface CreateNodeRequest {
+  name: string;
+  description: string;
+  script: File | null;
+}
+
 // API Service Functions
 export const nodeService = {
   // Get all nodes
@@ -42,6 +48,23 @@ export const nodeService = {
   // Get single node
   async getNode(id: string): Promise<Node> {
     const response = await axiosInstance.get(`nodes/${id}/`);
+    return response.data;
+  },
+
+  // Create new node
+  async createNode(data: CreateNodeRequest): Promise<Node> {
+    const formData = new FormData();
+    formData.append('name', data.name);
+    formData.append('description', data.description);
+    if (data.script) {
+      formData.append('script', data.script);
+    }
+
+    const response = await axiosInstance.post('nodes/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 
