@@ -187,10 +187,26 @@ export const subnodeService = {
     return response.data;
   },
 
-  // Get version detail with parameter values
+  // Get version detail by fetching subnode and finding the specific version
   async getVersionDetail(id: string, version: number): Promise<VersionDetail> {
-    const response = await axiosInstance.get(`subnodes/${id}/version_detail/${version}/`);
-    return response.data;
+    const subnode = await this.getSubnode(id);
+    const versionData = subnode.versions.find(v => v.version === version);
+    
+    if (!versionData) {
+      throw new Error(`Version ${version} not found for subnode ${id}`);
+    }
+    
+    return {
+      id: versionData.id,
+      name: subnode.name,
+      description: subnode.description,
+      node: subnode.node,
+      version: versionData.version,
+      version_comment: versionData.version_comment || '',
+      is_deployed: versionData.is_deployed,
+      is_editable: versionData.is_editable,
+      parameter_values: versionData.parameter_values
+    };
   },
 };
 
