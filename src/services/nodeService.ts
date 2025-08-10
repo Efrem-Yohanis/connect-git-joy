@@ -98,6 +98,12 @@ export const nodeService = {
   // Remove parameters from a node
   async removeParametersFromNode(id: string, parameterIds: string[]): Promise<void> {
     await axiosInstance.delete(`nodes/${id}/remove-parameter/`, { data: { parameter_ids: parameterIds } });
+  },
+
+  // Get node parameters
+  async getNodeParameters(id: string): Promise<any[]> {
+    const response = await axiosInstance.get(`nodes/${id}/parameters/`);
+    return response.data;
   }
 };
 

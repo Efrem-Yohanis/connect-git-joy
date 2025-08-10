@@ -11,6 +11,7 @@ import { Edit, Trash2, History, ChevronDown, CheckCircle, Clock, User, Plus, Cop
 import { useToast } from "@/hooks/use-toast";
 import { nodeService, type Node, type NodeVersion } from "@/services/nodeService";
 import { subnodeService, type SubnodeVersion } from "@/services/subnodeService";
+import { parameterService, type Parameter } from "@/services/parameterService";
 
 export function NodeDetailPage() {
   const { id } = useParams();
@@ -30,6 +31,11 @@ export function NodeDetailPage() {
   const [subnodeVersions, setSubnodeVersions] = useState<Record<string, SubnodeVersion[]>>({});
   const [subnodeVersionsLoading, setSubnodeVersionsLoading] = useState<Record<string, boolean>>({});
   const [subnodeVersionsOpen, setSubnodeVersionsOpen] = useState<Record<string, boolean>>({});
+
+  // Parameters management
+  const [nodeParameters, setNodeParameters] = useState<Parameter[]>([]);
+  const [parametersLoading, setParametersLoading] = useState(false);
+  const [parametersOpen, setParametersOpen] = useState(false);
 
   useEffect(() => {
     const fetchNode = async () => {
@@ -95,6 +101,26 @@ export function NodeDetailPage() {
     }
   };
 
+  // Fetch node parameters
+  const fetchNodeParameters = async () => {
+    if (!id || nodeParameters.length > 0) return;
+    
+    setParametersLoading(true);
+    try {
+      const parameters = await nodeService.getNodeParameters(id);
+      setNodeParameters(parameters);
+    } catch (err: any) {
+      console.error('Error fetching node parameters:', err);
+      toast({
+        title: "Error",
+        description: "Failed to load node parameters",
+        variant: "destructive"
+      });
+    } finally {
+      setParametersLoading(false);
+    }
+  };
+
   const handleNodeVersionsToggle = () => {
     setNodeVersionsOpen(!nodeVersionsOpen);
     if (!nodeVersionsOpen && nodeVersions.length === 0) {
@@ -109,6 +135,13 @@ export function NodeDetailPage() {
     }));
     if (!subnodeVersionsOpen[subnodeId] && !subnodeVersions[subnodeId]?.length) {
       fetchSubnodeVersions(subnodeId);
+    }
+  };
+
+  const handleParametersToggle = () => {
+    setParametersOpen(!parametersOpen);
+    if (!parametersOpen && nodeParameters.length === 0) {
+      fetchNodeParameters();
     }
   };
 
@@ -344,6 +377,74 @@ export function NodeDetailPage() {
           )}
         </CollapsibleContent>
       </Collapsible>
+
+      <Separator />
+
+      {/* Node Parameters */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-semibold">Parameters</h2>
+          <Collapsible open={parametersOpen} onOpenChange={handleParametersToggle}>
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" size="sm">
+                {parametersOpen ? 'Hide Parameters' : 'Show Parameters'}
+                <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${parametersOpen ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+          </Collapsible>
+        </div>
+        
+        <Collapsible open={parametersOpen}>
+          <CollapsibleContent className="space-y-4">
+            {parametersLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading parameters...</p>
+              </div>
+            ) : nodeParameters.length > 0 ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Node Parameters</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Key</TableHead>
+                        <TableHead>Default Value</TableHead>
+                        <TableHead>Required</TableHead>
+                        <TableHead>Last Updated By</TableHead>
+                        <TableHead>Last Updated At</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {nodeParameters.map((param) => (
+                        <TableRow key={param.id}>
+                          <TableCell className="font-medium">{param.key}</TableCell>
+                          <TableCell>{param.default_value}</TableCell>
+                          <TableCell>
+                            <Badge variant={param.required ? "default" : "secondary"}>
+                              {param.required ? "Required" : "Optional"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{param.last_updated_by || 'N/A'}</TableCell>
+                          <TableCell>{new Date(param.last_updated_at).toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <p className="text-muted-foreground">No parameters available for this node.</p>
+                </CardContent>
+              </Card>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
 
       <Separator />
 
