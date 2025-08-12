@@ -61,9 +61,7 @@ export function NodeDetailPage() {
         }));
         setNodeParameters(mappedParameters);
         
-        // Check for currently active node in the system
-        const activeNode = await nodeService.getActiveNode();
-        setCurrentActiveNode(activeNode);
+        // No need to check for globally active node since multiple nodes can be active
       } catch (err: any) {
         console.error("Error fetching node:", err);
         setError(err.response?.data?.error || err.message || "Error fetching node");
@@ -129,38 +127,19 @@ export function NodeDetailPage() {
           description: `Version ${selectedVersion.version} deployment would be toggled`,
         });
       } else {
-        // Check if another node is currently active
-        const activeNode = await nodeService.getActiveNode();
-        
-        if (activeNode && activeNode.id !== id) {
-          // Show confirmation dialog for deactivating current active node
-          const shouldProceed = window.confirm(
-            `Node "${activeNode.name}" (v${activeNode.active_version}) is currently active. ` +
-            `Activating this node will deactivate "${activeNode.name}". Do you want to proceed?`
-          );
-          
-          if (!shouldProceed) {
-            return;
-          }
-        }
-        
-        // Deploy/activate version
+        // Deploy/activate version (multiple nodes can be active simultaneously)
         await nodeService.activateNodeVersion(id, selectedVersion.version);
         toast({
           title: "Node Activated",
           description: `Node "${node?.name}" version ${selectedVersion.version} is now active`,
         });
         
-        // Refresh versions and active node status
+        // Refresh versions
         await fetchNodeVersions();
         
         // Refresh node data
         const updatedNode = await nodeService.getNode(id);
         setNode(updatedNode);
-        
-        // Update active node state
-        const newActiveNode = await nodeService.getActiveNode();
-        setCurrentActiveNode(newActiveNode);
       }
       
     } catch (err: any) {
@@ -221,21 +200,7 @@ export function NodeDetailPage() {
     if (!id) return;
     
     try {
-      // Check if another node is currently active
-      const activeNode = await nodeService.getActiveNode();
-      
-      if (activeNode && activeNode.id !== id) {
-        // Show confirmation dialog for deactivating current active node
-        const shouldProceed = window.confirm(
-          `Node "${activeNode.name}" (v${activeNode.active_version}) is currently active. ` +
-          `Activating this node will deactivate "${activeNode.name}". Do you want to proceed?`
-        );
-        
-        if (!shouldProceed) {
-          return;
-        }
-      }
-      
+      // Activate version (multiple nodes can be active simultaneously)
       await nodeService.activateNodeVersion(id, version);
       
       // Fetch the updated version details to get the latest data
@@ -270,9 +235,7 @@ export function NodeDetailPage() {
       const updatedNode = await nodeService.getNode(id);
       setNode(updatedNode);
       
-      // Update active node state
-      const newActiveNode = await nodeService.getActiveNode();
-      setCurrentActiveNode(newActiveNode);
+        // No need to update global active node state since multiple nodes can be active
       
       toast({
         title: "Node Activated",
@@ -401,17 +364,17 @@ export function NodeDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Current Active Node Warning */}
-      {currentActiveNode && currentActiveNode.id !== node.id && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+      {/* Node Status Info */}
+      {node.active_version && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
-            <span className="text-yellow-800 font-medium">
-              Another node is currently active: "{currentActiveNode.name}" (v{currentActiveNode.active_version})
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-green-800 font-medium">
+              This node is currently active with version {node.active_version}
             </span>
           </div>
-          <p className="text-yellow-700 text-sm mt-1">
-            Activating this node will automatically deactivate the currently active node.
+          <p className="text-green-700 text-sm mt-1">
+            Multiple nodes can be active simultaneously, but only one version per node.
           </p>
         </div>
       )}
