@@ -121,10 +121,11 @@ export function NodeDetailPage() {
     
     try {
       if (selectedVersion.is_deployed) {
-        // For now, just show a message that deactivation would happen
+        // Undeploy the current version
+        await nodeService.undeployNodeVersion(id, selectedVersion.version);
         toast({
-          title: "Toggle Deployment",
-          description: `Version ${selectedVersion.version} deployment would be toggled`,
+          title: "Version Undeployed",
+          description: `Version ${selectedVersion.version} has been undeployed`,
         });
       } else {
         // Deploy/activate version (multiple nodes can be active simultaneously)
@@ -133,14 +134,14 @@ export function NodeDetailPage() {
           title: "Node Activated",
           description: `Node "${node?.name}" version ${selectedVersion.version} is now active`,
         });
-        
-        // Refresh versions
-        await fetchNodeVersions();
-        
-        // Refresh node data
-        const updatedNode = await nodeService.getNode(id);
-        setNode(updatedNode);
       }
+      
+      // Refresh versions
+      await fetchNodeVersions();
+      
+      // Refresh node data
+      const updatedNode = await nodeService.getNode(id);
+      setNode(updatedNode);
       
     } catch (err: any) {
       console.error('Error toggling version deployment:', err);
