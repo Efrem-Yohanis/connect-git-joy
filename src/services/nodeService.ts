@@ -149,7 +149,7 @@ export const nodeService = {
   async getNodeVersion(id: string, version: number): Promise<NodeVersion> {
     console.log(`📡 Fetching node ${id} version ${version}...`);
     try {
-      const response = await axiosInstance.get(`nodes/${id}/version/${version}/`);
+      const response = await axiosInstance.get(`nodes/${id}/versions/${version}/`);
       console.log('✅ Node version fetched successfully:', response.data);
       return response.data;
     } catch (error) {
