@@ -14,10 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { 
   Edit, 
-  Download,
-  Trash2,
-  Save,
-  ExternalLink
+  Play,
+  Square
 } from "lucide-react";
 import {
   AlertDialog,
@@ -46,6 +44,7 @@ export function ParameterDetailPage() {
   const navigate = useNavigate();
   const { data: parameter, loading, error, refetch } = useParameter(id!);
   const [showVersionDialog, setShowVersionDialog] = useState(false);
+  const [deploying, setDeploying] = useState(false);
   const { toast } = useToast();
 
   if (loading) {
@@ -57,34 +56,55 @@ export function ParameterDetailPage() {
   }
 
   const handleEdit = () => {
+    if (parameter.is_active) {
+      toast({
+        title: "Cannot edit deployed parameter",
+        description: "Undeploy the parameter first to edit it.",
+        variant: "destructive",
+      });
+      return;
+    }
     navigate(`/parameters/${id}/edit`);
   };
 
-  const handleDelete = async () => {
+  const handleDeploy = async () => {
+    setDeploying(true);
     try {
-      await parameterService.deleteParameter(parameter.id);
+      await parameterService.deployParameter(parameter.id);
       toast({
-        title: "Parameter deleted successfully",
-        description: "The parameter has been removed.",
+        title: "Parameter deployed successfully",
+        description: "The parameter is now active.",
       });
-      navigate('/parameters');
+      refetch();
     } catch (error) {
       toast({
-        title: "Error deleting parameter",
-        description: "Failed to delete the parameter. Please try again.",
+        title: "Error deploying parameter",
+        description: "Failed to deploy the parameter. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setDeploying(false);
     }
   };
 
-  const handleExport = () => {
-    const dataStr = JSON.stringify(parameter, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `parameter_${parameter.key}.json`;
-    link.click();
+  const handleUndeploy = async () => {
+    setDeploying(true);
+    try {
+      await parameterService.undeployParameter(parameter.id);
+      toast({
+        title: "Parameter undeployed successfully",
+        description: "The parameter is now in draft mode.",
+      });
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error undeploying parameter",
+        description: "Failed to undeploy the parameter. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeploying(false);
+    }
   };
 
   return (
@@ -93,7 +113,12 @@ export function ParameterDetailPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">🧩 {parameter.key}</h1>
+            <div className="flex items-center space-x-3">
+              <h1 className="text-3xl font-bold">🧩 {parameter.key}</h1>
+              <Badge variant={parameter.is_active ? "default" : "secondary"}>
+                {parameter.is_active ? "🟢 Published" : "⚪ Draft"}
+              </Badge>
+            </div>
             <div className="flex items-center space-x-3 mt-2">
               <span className="text-muted-foreground">Default Value:</span>
               <span className="font-medium">{parameter.default_value}</span>
@@ -104,31 +129,37 @@ export function ParameterDetailPage() {
           </div>
           
           <div className="flex items-center space-x-2">
-            <Button variant="outline" onClick={handleExport}>
-              <Download className="h-4 w-4 mr-2" />
-              Export JSON
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={handleEdit}
+              disabled={parameter.is_active}
+              title="Edit Parameter"
+            >
+              <Edit className="h-4 w-4" />
             </Button>
-            
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Parameter</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete this parameter? This action cannot be undone and will affect all associated subnodes.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+
+            {parameter.is_active ? (
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={handleUndeploy}
+                disabled={deploying}
+                title="Undeploy Parameter"
+              >
+                <Square className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={handleDeploy}
+                disabled={deploying}
+                title="Deploy Parameter"
+              >
+                <Play className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
         
@@ -152,15 +183,13 @@ export function ParameterDetailPage() {
               <p className="font-mono">{parameter.default_value}</p>
             </div>
             <div>
+              <span className="font-medium text-muted-foreground">Data Type:</span>
+              <p className="font-mono">{parameter.datatype}</p>
+            </div>
+            <div>
               <span className="font-medium text-muted-foreground">Required:</span>
               <Badge variant={parameter.required ? "default" : "secondary"} className="ml-2">
                 {parameter.required ? "Required" : "Optional"}
-              </Badge>
-            </div>
-            <div>
-              <span className="font-medium text-muted-foreground">Associated Node:</span>
-              <Badge variant="outline" className="ml-2">
-                {parameter.node}
               </Badge>
             </div>
           </div>

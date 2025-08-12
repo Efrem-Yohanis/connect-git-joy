@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Plus, Upload, Download, Trash2, Eye, Grid, List, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LoadingCard } from "@/components/ui/loading";
 import { useItems } from '../apis/ItemService'; // Using real API data
 import { deleteItem } from '../apis/ItemService'; // Using real delete function
 
@@ -119,7 +120,7 @@ const handleDelete = async (flowId: string) => {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingCard text="Loading flows..." />;
   }
 
   if (error) {

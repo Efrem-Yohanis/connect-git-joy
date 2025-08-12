@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Plus, Trash2, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { nodeService } from "@/services/nodeService";
@@ -21,11 +23,10 @@ export function CreateNodePage() {
   const [nodeDescription, setNodeDescription] = useState("");
   const [scriptFile, setScriptFile] = useState<File | null>(null);
   const [selectedParameterIds, setSelectedParameterIds] = useState<string[]>([]);
-  const [parameterFilter, setParameterFilter] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [parameterComboOpen, setParameterComboOpen] = useState(false);
 
-  const filteredParameters = availableParameters.filter(param =>
-    param.key.toLowerCase().includes(parameterFilter.toLowerCase()) &&
+  const availableParametersForSelection = availableParameters.filter(param =>
     !selectedParameterIds.includes(param.id)
   );
 
@@ -75,12 +76,12 @@ export function CreateNodePage() {
       const newNode = await nodeService.createNode({
         name: nodeName,
         description: nodeDescription,
-        script: scriptFile
+        script: scriptFile?.name || ''
       });
 
-      // Add parameters if any are selected
+      // Add parameters to version 1 if any are selected
       if (selectedParameterIds.length > 0) {
-        await nodeService.addParametersToNode(newNode.id, selectedParameterIds);
+        await nodeService.addParametersToVersion(newNode.id, 1, selectedParameterIds);
       }
 
       toast({
@@ -175,38 +176,54 @@ export function CreateNodePage() {
         <CardContent>
           <div className="space-y-4">
             {/* Parameter Selection */}
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <Label>Filter Parameters</Label>
-                <Input
-                  value={parameterFilter}
-                  onChange={(e) => setParameterFilter(e.target.value)}
-                  placeholder="Type to filter parameters..."
-                />
-              </div>
-              <div className="flex-1">
-                <Label>Select Parameter</Label>
-                <Select onValueChange={addParameter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a parameter to add" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {parametersLoading ? (
-                      <SelectItem value="loading" disabled>Loading parameters...</SelectItem>
-                    ) : filteredParameters.length === 0 ? (
-                      <SelectItem value="no-results" disabled>
-                        {parameterFilter ? "No parameters match filter" : "No parameters available"}
-                      </SelectItem>
-                    ) : (
-                      filteredParameters.map((param) => (
-                        <SelectItem key={param.id} value={param.id}>
-                          {param.key} ({param.required ? 'Required' : 'Optional'})
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label>Select Parameter</Label>
+              <Popover open={parameterComboOpen} onOpenChange={setParameterComboOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={parameterComboOpen}
+                    className="w-full justify-between"
+                  >
+                    Select a parameter to add...
+                    <Plus className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command>
+                    <CommandInput placeholder="Type to search parameters..." />
+                    <CommandList>
+                      <CommandEmpty>No parameters found.</CommandEmpty>
+                      <CommandGroup>
+                        {parametersLoading ? (
+                          <CommandItem disabled>Loading parameters...</CommandItem>
+                        ) : availableParametersForSelection.length === 0 ? (
+                          <CommandItem disabled>No parameters available</CommandItem>
+                        ) : (
+                          availableParametersForSelection.map((param) => (
+                            <CommandItem
+                              key={param.id}
+                              value={param.key}
+                              onSelect={() => {
+                                addParameter(param.id);
+                                setParameterComboOpen(false);
+                              }}
+                            >
+                              <div className="flex flex-col">
+                                <span className="font-medium">{param.key}</span>
+                                <span className="text-sm text-muted-foreground">
+                                  Default: {param.default_value || 'None'} | {param.required ? 'Required' : 'Optional'}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          ))
+                        )}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Selected Parameters */}

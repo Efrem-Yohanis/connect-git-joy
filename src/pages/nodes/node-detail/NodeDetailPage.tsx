@@ -1,17 +1,15 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
-import { Edit, Trash2, History, ChevronDown, CheckCircle, Clock, User, Plus, Copy, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { nodeService, type Node, type NodeVersion } from "@/services/nodeService";
-import { subnodeService, type SubnodeVersion } from "@/services/subnodeService";
 import { parameterService, type Parameter } from "@/services/parameterService";
+import { NodeHeader } from "./components/NodeHeader";
+import { NodeSummary } from "./components/NodeSummary";
+import { PropertiesSection } from "./components/PropertiesSection";
+import { SubnodesSection } from "./components/SubnodesSection";
+import { VersionHistoryModal } from "./components/VersionHistoryModal";
 
 export function NodeDetailPage() {
   const { id } = useParams();
@@ -22,20 +20,17 @@ export function NodeDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Node version management
+  // Version management
   const [nodeVersions, setNodeVersions] = useState<NodeVersion[]>([]);
+  const [selectedVersion, setSelectedVersion] = useState<NodeVersion | null>(null);
   const [nodeVersionsLoading, setNodeVersionsLoading] = useState(false);
-  const [nodeVersionsOpen, setNodeVersionsOpen] = useState(false);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   
-  // Subnode version management - track versions for each subnode
-  const [subnodeVersions, setSubnodeVersions] = useState<Record<string, SubnodeVersion[]>>({});
-  const [subnodeVersionsLoading, setSubnodeVersionsLoading] = useState<Record<string, boolean>>({});
-  const [subnodeVersionsOpen, setSubnodeVersionsOpen] = useState<Record<string, boolean>>({});
+  // Active node checking
+  const [currentActiveNode, setCurrentActiveNode] = useState<Node | null>(null);
 
   // Parameters management
   const [nodeParameters, setNodeParameters] = useState<Parameter[]>([]);
-  const [parametersLoading, setParametersLoading] = useState(false);
-  const [parametersOpen, setParametersOpen] = useState(false);
 
   useEffect(() => {
     const fetchNode = async () => {
@@ -44,6 +39,31 @@ export function NodeDetailPage() {
       try {
         const nodeData = await nodeService.getNode(id);
         setNode(nodeData);
+        
+        // Set node versions from the fetched data
+        setNodeVersions(nodeData.versions);
+        
+        // Find the active version or use the first version
+        const activeVersion = nodeData.versions.find(v => v.is_deployed) || nodeData.versions[0];
+        setSelectedVersion(activeVersion);
+        
+        // Map parameters from the active/selected version
+        const mappedParameters = (activeVersion?.parameters || []).map((param: any) => ({
+          id: param.id,
+          key: param.key,
+          default_value: param.default_value,
+          datatype: param.datatype,
+          node: nodeData.id,
+          required: false, // Default value since not in API
+          last_updated_by: null,
+          last_updated_at: nodeData.last_updated_at,
+          is_active: param.is_active
+        }));
+        setNodeParameters(mappedParameters);
+        
+        // Check for currently active node in the system
+        const activeNode = await nodeService.getActiveNode();
+        setCurrentActiveNode(activeNode);
       } catch (err: any) {
         console.error("Error fetching node:", err);
         setError(err.response?.data?.error || err.message || "Error fetching node");
@@ -60,14 +80,20 @@ export function NodeDetailPage() {
     fetchNode();
   }, [id, toast]);
 
-  // Fetch node versions
+  // Fetch node versions - now simplified since we get them from the main API call
   const fetchNodeVersions = async () => {
-    if (!id || nodeVersions.length > 0) return;
+    if (!id || !node) return;
     
     setNodeVersionsLoading(true);
     try {
-      const versions = await nodeService.getNodeVersions(id);
+      // We already have versions from the main node API call, but refresh if needed
+      const nodeData = await nodeService.getNode(id);
+      const versions = nodeData.versions;
       setNodeVersions(versions);
+      
+      // Set selected version to active version or latest
+      const activeVersion = versions.find(v => v.is_deployed) || versions[0];
+      setSelectedVersion(activeVersion);
     } catch (err: any) {
       console.error('Error fetching node versions:', err);
       toast({
@@ -80,68 +106,114 @@ export function NodeDetailPage() {
     }
   };
 
-  // Fetch subnode versions
-  const fetchSubnodeVersions = async (subnodeId: string) => {
-    if (subnodeVersions[subnodeId]?.length > 0) return;
-    
-    setSubnodeVersionsLoading(prev => ({ ...prev, [subnodeId]: true }));
-    try {
-    const subnodeData = await subnodeService.getSubnode(subnodeId);
-    const versions = subnodeData.versions;
-      setSubnodeVersions(prev => ({ ...prev, [subnodeId]: versions }));
-    } catch (err: any) {
-      console.error('Error fetching subnode versions:', err);
-      toast({
-        title: "Error",
-        description: "Failed to load subnode versions",
-        variant: "destructive"
-      });
-    } finally {
-      setSubnodeVersionsLoading(prev => ({ ...prev, [subnodeId]: false }));
+
+  // Event handlers
+  const handleEditVersion = () => {
+    if (selectedVersion && !selectedVersion.is_deployed) {
+      navigate(`/nodes/${id}/edit?version=${selectedVersion.version}`);
     }
   };
 
-  // Fetch node parameters
-  const fetchNodeParameters = async () => {
-    if (!id || nodeParameters.length > 0) return;
+  const handleCreateNewVersion = () => {
+    navigate(`/nodes/${id}/edit?newVersion=true`);
+  };
+
+  const handleToggleDeployment = async () => {
+    if (!selectedVersion || !id) return;
     
-    setParametersLoading(true);
     try {
-      const parameters = await nodeService.getNodeParameters(id);
-      setNodeParameters(parameters);
+      if (selectedVersion.is_deployed) {
+        // For now, just show a message that deactivation would happen
+        toast({
+          title: "Toggle Deployment",
+          description: `Version ${selectedVersion.version} deployment would be toggled`,
+        });
+      } else {
+        // Check if another node is currently active
+        const activeNode = await nodeService.getActiveNode();
+        
+        if (activeNode && activeNode.id !== id) {
+          // Show confirmation dialog for deactivating current active node
+          const shouldProceed = window.confirm(
+            `Node "${activeNode.name}" (v${activeNode.active_version}) is currently active. ` +
+            `Activating this node will deactivate "${activeNode.name}". Do you want to proceed?`
+          );
+          
+          if (!shouldProceed) {
+            return;
+          }
+        }
+        
+        // Deploy/activate version
+        await nodeService.activateNodeVersion(id, selectedVersion.version);
+        toast({
+          title: "Node Activated",
+          description: `Node "${node?.name}" version ${selectedVersion.version} is now active`,
+        });
+        
+        // Refresh versions and active node status
+        await fetchNodeVersions();
+        
+        // Refresh node data
+        const updatedNode = await nodeService.getNode(id);
+        setNode(updatedNode);
+        
+        // Update active node state
+        const newActiveNode = await nodeService.getActiveNode();
+        setCurrentActiveNode(newActiveNode);
+      }
+      
     } catch (err: any) {
-      console.error('Error fetching node parameters:', err);
+      console.error('Error toggling version deployment:', err);
       toast({
         title: "Error",
-        description: "Failed to load node parameters",
+        description: "Failed to update version deployment status",
         variant: "destructive"
       });
-    } finally {
-      setParametersLoading(false);
     }
   };
 
-  const handleNodeVersionsToggle = () => {
-    setNodeVersionsOpen(!nodeVersionsOpen);
-    if (!nodeVersionsOpen && nodeVersions.length === 0) {
+  const handleShowVersionHistory = () => {
+    setVersionHistoryOpen(true);
+    if (nodeVersions.length === 0) {
       fetchNodeVersions();
     }
   };
 
-  const handleSubnodeVersionsToggle = (subnodeId: string) => {
-    setSubnodeVersionsOpen(prev => ({ 
-      ...prev, 
-      [subnodeId]: !prev[subnodeId] 
-    }));
-    if (!subnodeVersionsOpen[subnodeId] && !subnodeVersions[subnodeId]?.length) {
-      fetchSubnodeVersions(subnodeId);
-    }
-  };
-
-  const handleParametersToggle = () => {
-    setParametersOpen(!parametersOpen);
-    if (!parametersOpen && nodeParameters.length === 0) {
-      fetchNodeParameters();
+  const handleViewVersion = async (version: NodeVersion) => {
+    if (!id) return;
+    
+    try {
+      // Fetch specific version details from API
+      const versionDetails = await nodeService.getNodeVersion(id, version.version);
+      setSelectedVersion(versionDetails);
+      
+      // Map parameters from the selected version
+      const mappedParameters = (versionDetails.parameters || []).map((param: any) => ({
+        id: param.id,
+        key: param.key,
+        default_value: param.default_value,
+        datatype: param.datatype,
+        node: node!.id,
+        required: false,
+        last_updated_by: null,
+        last_updated_at: node!.last_updated_at,
+        is_active: param.is_active
+      }));
+      setNodeParameters(mappedParameters);
+      
+      setVersionHistoryOpen(false);
+      toast({
+        title: "Version Selected",
+        description: `Now viewing version ${version.version}`,
+      });
+    } catch (err: any) {
+      console.error('Error fetching version details:', err);
+      toast({
+        title: "Error",
+        description: "Failed to load version details",
+        variant: "destructive"
+      });
     }
   };
 
@@ -149,22 +221,65 @@ export function NodeDetailPage() {
     if (!id) return;
     
     try {
+      // Check if another node is currently active
+      const activeNode = await nodeService.getActiveNode();
+      
+      if (activeNode && activeNode.id !== id) {
+        // Show confirmation dialog for deactivating current active node
+        const shouldProceed = window.confirm(
+          `Node "${activeNode.name}" (v${activeNode.active_version}) is currently active. ` +
+          `Activating this node will deactivate "${activeNode.name}". Do you want to proceed?`
+        );
+        
+        if (!shouldProceed) {
+          return;
+        }
+      }
+      
       await nodeService.activateNodeVersion(id, version);
       
+      // Fetch the updated version details to get the latest data
+      const versionDetails = await nodeService.getNodeVersion(id, version);
+      
+      // Update versions state
       setNodeVersions(prevVersions => 
         prevVersions.map(v => ({
           ...v,
-          is_active: v.version === version
+          is_deployed: v.version === version
         }))
       );
       
+      // Update selected version with fresh data
+      setSelectedVersion({ ...versionDetails, is_deployed: true });
+      
+      // Map parameters from the activated version
+      const mappedParameters = (versionDetails.parameters || []).map((param: any) => ({
+        id: param.id,
+        key: param.key,
+        default_value: param.default_value,
+        datatype: param.datatype,
+        node: node!.id,
+        required: false,
+        last_updated_by: null,
+        last_updated_at: node!.last_updated_at,
+        is_active: param.is_active
+      }));
+      setNodeParameters(mappedParameters);
+      
+      // Refresh node data
       const updatedNode = await nodeService.getNode(id);
       setNode(updatedNode);
       
+      // Update active node state
+      const newActiveNode = await nodeService.getActiveNode();
+      setCurrentActiveNode(newActiveNode);
+      
       toast({
-        title: "Version Activated",
-        description: `Node version ${version} is now active`,
+        title: "Node Activated",
+        description: `Node "${node?.name}" version ${version} is now active`,
       });
+      
+      setVersionHistoryOpen(false);
     } catch (err: any) {
       console.error('Error activating node version:', err);
       toast({
@@ -175,373 +290,192 @@ export function NodeDetailPage() {
     }
   };
 
-  const activateSubnodeVersion = async (subnodeId: string, version: number) => {
+  const handleCloneNode = async () => {
+    if (!id) return;
+    
     try {
-      await subnodeService.activateVersion(subnodeId, version);
-      
-      setSubnodeVersions(prev => ({
-        ...prev,
-        [subnodeId]: prev[subnodeId]?.map(v => ({
-          ...v,
-          is_active: v.version === version
-        })) || []
-      }));
-      
-      if (id) {
-        const updatedNode = await nodeService.getNode(id);
-        setNode(updatedNode);
-      }
-      
+      const clonedNode = await nodeService.cloneNode(id);
       toast({
-        title: "Subnode Version Activated",
-        description: `Subnode version ${version} is now active`,
+        title: "Node Cloned",
+        description: `Node "${clonedNode.name}" has been created`,
       });
+      navigate(`/nodes/${clonedNode.id}/edit`);
     } catch (err: any) {
-      console.error('Error activating subnode version:', err);
+      console.error('Error cloning node:', err);
       toast({
         title: "Error",
-        description: "Failed to activate subnode version",
+        description: "Failed to clone node",
         variant: "destructive"
       });
     }
   };
 
+  const handleExportVersion = async () => {
+    if (!selectedVersion || !id) return;
+    
+    try {
+      const blob = await nodeService.exportVersion(id, selectedVersion.version);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${node?.name}_v${selectedVersion.version}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Export Complete",
+        description: `Version ${selectedVersion.version} exported successfully`,
+      });
+    } catch (err: any) {
+      console.error('Error exporting version:', err);
+      toast({
+        title: "Error",
+        description: "Failed to export version",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteVersion = async () => {
+    if (!selectedVersion || !id) return;
+    
+    const shouldDelete = window.confirm(
+      `Are you sure you want to delete version ${selectedVersion.version}? This action cannot be undone.`
+    );
+    
+    if (!shouldDelete) return;
+    
+    try {
+      await nodeService.deleteNodeVersion(id, selectedVersion.version);
+      
+      // Refresh versions
+      await fetchNodeVersions();
+      
+      toast({
+        title: "Version Deleted",
+        description: `Version ${selectedVersion.version} has been deleted`,
+      });
+    } catch (err: any) {
+      console.error('Error deleting version:', err);
+      toast({
+        title: "Error",
+        description: "Failed to delete version",
+        variant: "destructive"
+      });
+    }
+  };
+
+
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return (
+      <div className="text-center py-8">
+        <p className="text-destructive">Error: {error}</p>
+        <Button onClick={() => navigate('/nodes')} className="mt-4">
+          Back to Nodes
+        </Button>
+      </div>
+    );
   }
 
   if (!node) {
-    return <div>Node not found</div>;
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Node not found</p>
+        <Button onClick={() => navigate('/nodes')} className="mt-4">
+          Back to Nodes
+        </Button>
+      </div>
+    );
   }
 
-  const renderVersionHistory = (versions: NodeVersion[] | SubnodeVersion[], isLoading: boolean, onActivate: (version: number) => void, title: string) => (
-    <div className="border border-border rounded-lg p-4 bg-muted/20">
-      <div className="flex items-center space-x-2 mb-4">
-        <History className="h-5 w-5" />
-        <h3 className="font-semibold">{title}</h3>
-      </div>
-      
-      {isLoading ? (
-        <div className="text-center py-4 text-muted-foreground">
-          Loading versions...
-        </div>
-      ) : versions.length > 0 ? (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Version</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Created By</TableHead>
-              <TableHead>Created At</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {versions.map((version) => (
-              <TableRow key={version.id}>
-                <TableCell>
-                  <Badge variant={version.is_active ? "default" : "outline"}>
-                    v{version.version}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-2">
-                    {version.is_active ? (
-                      <>
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-green-700 font-medium">Active</span>
-                      </>
-                    ) : (
-                      <>
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Inactive</span>
-                      </>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span>{version.created_by}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {new Date(version.created_at).toLocaleString()}
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm text-muted-foreground">
-                    {version.description || 'No description'}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  {!version.is_active && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          Activate
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Activate Version {version.version}</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will make version {version.version} the active version. 
-                            The current active version will be deactivated. This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => onActivate(version.version)}>
-                            Activate Version
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                  {version.is_active && (
-                    <Badge variant="secondary" className="text-xs">
-                      Current
-                    </Badge>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      ) : (
-        <div className="text-center py-4 text-muted-foreground">
-          No version history available
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-3xl font-bold">{node.name}</h1>
-          <Badge variant="outline">v{node.version}</Badge>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button onClick={() => navigate(`/nodes/${id}/edit`)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Node
-          </Button>
-          <Button variant="outline" onClick={() => navigate('/nodes')}>
-            Back to Nodes
-          </Button>
-        </div>
-      </div>
-
-      {/* Node Information */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <h3 className="font-semibold">Created At</h3>
-          <p>{new Date(node.created_at).toLocaleString()}</p>
-        </div>
-        <div className="space-y-2">
-          <h3 className="font-semibold">Last Updated</h3>
-          <p>{new Date(node.last_updated_at).toLocaleString()}</p>
-        </div>
-        <div className="space-y-2">
-          <h3 className="font-semibold">Current Version</h3>
+      {/* Current Active Node Warning */}
+      {currentActiveNode && currentActiveNode.id !== node.id && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <div className="flex items-center space-x-2">
-            <Badge variant="outline">v{node.version}</Badge>
-            <Collapsible open={nodeVersionsOpen} onOpenChange={handleNodeVersionsToggle}>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 px-2">
-                  <History className="h-3 w-3 mr-1" />
-                  Version History
-                  <ChevronDown className={`h-3 w-3 ml-1 transition-transform ${nodeVersionsOpen ? 'rotate-180' : ''}`} />
-                </Button>
-              </CollapsibleTrigger>
-            </Collapsible>
+            <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+            <span className="text-yellow-800 font-medium">
+              Another node is currently active: "{currentActiveNode.name}" (v{currentActiveNode.active_version})
+            </span>
           </div>
+          <p className="text-yellow-700 text-sm mt-1">
+            Activating this node will automatically deactivate the currently active node.
+          </p>
         </div>
-      </div>
+      )}
 
-      {/* Node Version History Panel */}
-      <Collapsible open={nodeVersionsOpen} onOpenChange={setNodeVersionsOpen}>
-        <CollapsibleContent className="space-y-4">
-          {renderVersionHistory(
-            nodeVersions, 
-            nodeVersionsLoading, 
-            activateNodeVersion, 
-            "Node Version History"
-          )}
-        </CollapsibleContent>
-      </Collapsible>
+      {/* Header Section */}
+      <NodeHeader
+        node={node}
+        selectedVersion={selectedVersion}
+        onEditVersion={handleEditVersion}
+        onToggleDeployment={handleToggleDeployment}
+        onCreateNewVersion={handleCreateNewVersion}
+        onShowVersionHistory={handleShowVersionHistory}
+        onCloneNode={handleCloneNode}
+        onExportVersion={handleExportVersion}
+        onDeleteVersion={handleDeleteVersion}
+        isLoading={loading}
+      />
 
       <Separator />
 
-      {/* Node Parameters */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">Parameters</h2>
-          <Collapsible open={parametersOpen} onOpenChange={handleParametersToggle}>
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" size="sm">
-                {parametersOpen ? 'Hide Parameters' : 'Show Parameters'}
-                <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${parametersOpen ? 'rotate-180' : ''}`} />
-              </Button>
-            </CollapsibleTrigger>
-          </Collapsible>
-        </div>
-        
-        <Collapsible open={parametersOpen}>
-          <CollapsibleContent className="space-y-4">
-            {parametersLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading parameters...</p>
-              </div>
-            ) : nodeParameters.length > 0 ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Node Parameters</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Key</TableHead>
-                        <TableHead>Default Value</TableHead>
-                        <TableHead>Required</TableHead>
-                        <TableHead>Last Updated By</TableHead>
-                        <TableHead>Last Updated At</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {nodeParameters.map((param) => (
-                        <TableRow key={param.id}>
-                          <TableCell className="font-medium">{param.key}</TableCell>
-                          <TableCell>{param.default_value}</TableCell>
-                          <TableCell>
-                            <Badge variant={param.required ? "default" : "secondary"}>
-                              {param.required ? "Required" : "Optional"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{param.last_updated_by || 'N/A'}</TableCell>
-                          <TableCell>{new Date(param.last_updated_at).toLocaleString()}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <p className="text-muted-foreground">No parameters available for this node.</p>
-                </CardContent>
-              </Card>
-            )}
-          </CollapsibleContent>
-        </Collapsible>
-      </div>
+      {/* Node Detail Section */}
+      <NodeSummary
+        node={node}
+        selectedVersion={selectedVersion}
+        propertiesCount={nodeParameters.length}
+        subnodesCount={selectedVersion?.subnodes?.length || 0}
+      />
 
       <Separator />
 
-      {/* Subnodes */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-semibold">Subnodes</h2>
-        {node.subnodes && node.subnodes.length > 0 ? (
-          <div className="space-y-4">
-            {node.subnodes.map((subnode: any) => (
-              <Card key={subnode.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <CardTitle className="text-lg">{subnode.name}</CardTitle>
-                      <Badge variant={subnode.is_selected ? "default" : "secondary"}>
-                        {subnode.is_selected ? "Selected" : "Not Selected"}
-                      </Badge>
-                      <Badge variant="outline">v{subnode.version}</Badge>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Collapsible 
-                        open={subnodeVersionsOpen[subnode.id]} 
-                        onOpenChange={() => handleSubnodeVersionsToggle(subnode.id)}
-                      >
-                        <CollapsibleTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-6 px-2">
-                            <History className="h-3 w-3 mr-1" />
-                            Version History
-                            <ChevronDown className={`h-3 w-3 ml-1 transition-transform ${subnodeVersionsOpen[subnode.id] ? 'rotate-180' : ''}`} />
-                          </Button>
-                        </CollapsibleTrigger>
-                      </Collapsible>
-                      <Button 
-                        size="sm" 
-                        onClick={() => navigate(`/subnodes/${subnode.id}`)}
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Details
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  {/* Subnode Version History */}
-                  <Collapsible open={subnodeVersionsOpen[subnode.id]}>
-                    <CollapsibleContent>
-                      {renderVersionHistory(
-                        subnodeVersions[subnode.id] || [], 
-                        subnodeVersionsLoading[subnode.id] || false, 
-                        (version) => activateSubnodeVersion(subnode.id, version), 
-                        `${subnode.name} Version History`
-                      )}
-                    </CollapsibleContent>
-                  </Collapsible>
+      {/* Properties Section */}
+      <PropertiesSection
+        properties={nodeParameters}
+        loading={false}
+      />
 
-                  {/* Parameters */}
-                  {subnode.parameters && subnode.parameters.length > 0 && (
-                    <div className="space-y-2">
-                      <h4 className="font-medium">Parameters</h4>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Key</TableHead>
-                            <TableHead>Default Value</TableHead>
-                            <TableHead>Required</TableHead>
-                            <TableHead>Last Updated</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {subnode.parameters.map((param: any) => (
-                            <TableRow key={param.id}>
-                              <TableCell className="font-medium">{param.key}</TableCell>
-                              <TableCell>{param.default_value}</TableCell>
-                              <TableCell>
-                                <Badge variant={param.required ? "default" : "secondary"}>
-                                  {param.required ? "Required" : "Optional"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>{new Date(param.last_updated_at).toLocaleString()}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="text-center py-8">
-              <p className="text-muted-foreground">No subnodes available for this node.</p>
-            </CardContent>
-          </Card>
-        )}
+      <Separator />
+
+      {/* Subnodes Section */}
+      {(() => {
+        console.log('🔍 Rendering SubnodesSection - selectedVersion:', selectedVersion);
+        console.log('🔍 Rendering SubnodesSection - subnodes:', selectedVersion?.subnodes);
+        return (
+          <SubnodesSection
+            subnodes={selectedVersion?.subnodes || []}
+          />
+        );
+      })()}
+
+      {/* Version History Modal */}
+      <VersionHistoryModal
+        open={versionHistoryOpen}
+        onOpenChange={setVersionHistoryOpen}
+        versions={nodeVersions}
+        loading={nodeVersionsLoading}
+        onActivateVersion={activateNodeVersion}
+        onViewVersion={handleViewVersion}
+      />
+
+      {/* Back to Nodes Button */}
+      <div className="flex justify-end pt-4">
+        <Button variant="outline" onClick={() => navigate('/nodes')}>
+          Back to Nodes
+        </Button>
       </div>
     </div>
   );

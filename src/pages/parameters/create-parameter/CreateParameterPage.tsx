@@ -7,13 +7,30 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save } from "lucide-react";
-import { useNodes } from "@/services/nodeService";
+import { nodeService } from "@/services/nodeService";
+import { useEffect } from "react";
 import { parameterService } from "@/services/parameterService";
 import { useToast } from "@/hooks/use-toast";
 
 export function CreateParameterPage() {
   const navigate = useNavigate();
-  const { data: nodes, loading: nodesLoading, error: nodesError } = useNodes();
+  const [nodes, setNodes] = useState<any[]>([]);
+  const [nodesLoading, setNodesLoading] = useState(true);
+  const [nodesError, setNodesError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchNodes = async () => {
+      try {
+        const nodeList = await nodeService.getAllNodes();
+        setNodes(nodeList);
+      } catch (err: any) {
+        setNodesError(err.message || 'Failed to fetch nodes');
+      } finally {
+        setNodesLoading(false);
+      }
+    };
+    fetchNodes();
+  }, []);
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({

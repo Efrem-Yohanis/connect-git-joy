@@ -18,6 +18,8 @@ export interface Parameter {
   required: boolean;
   last_updated_by: string | null;
   last_updated_at: string;
+  is_active: boolean;
+  datatype: string;
 }
 
 export interface CreateParameterRequest {
@@ -56,6 +58,44 @@ export const parameterService = {
   // Delete parameter
   async deleteParameter(id: string): Promise<void> {
     await axiosInstance.delete(`parameters/${id}/`);
+  },
+
+  // Deploy parameter
+  async deployParameter(id: string): Promise<Parameter> {
+    const response = await axiosInstance.post(`parameters/${id}/deploy/`);
+    return response.data;
+  },
+
+  // Undeploy parameter
+  async undeployParameter(id: string): Promise<Parameter> {
+    const response = await axiosInstance.post(`parameters/${id}/undeploy/`);
+    return response.data;
+  },
+
+  // Export parameter JSON
+  async exportParameter(id: string): Promise<Blob> {
+    const response = await axiosInstance.get(`parameters/${id}/export/`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+
+  // Import parameter JSON
+  async importParameter(file: File): Promise<Parameter> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await axiosInstance.post('parameters/import_json/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  // Clone parameter
+  async cloneParameter(id: string): Promise<Parameter> {
+    const response = await axiosInstance.post(`parameters/${id}/clone/`);
+    return response.data;
   },
 };
 

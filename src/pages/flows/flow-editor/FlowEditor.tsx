@@ -208,7 +208,8 @@ export function FlowEditor() {
         const node = nodes.find(n => n.id === nodeId);
         if (node?.data.nodeId) {
           const nodeData = await nodeService.getNode(node.data.nodeId);
-          const selectedSubnode = nodeData.subnodes?.find(s => s.name === connector);
+          const activeVersion = nodeData.versions.find(v => v.is_deployed) || nodeData.versions[0];
+          const selectedSubnode = activeVersion?.subnodes?.find(s => s.name === connector);
           
           if (selectedSubnode) {
             await flowService.updateFlowNodeSubnode(flowNodeId, selectedSubnode.id);
@@ -235,6 +236,7 @@ export function FlowEditor() {
     try {
       // First, get the actual node data from API
       const nodeData = await nodeService.getNode(nodeId);
+      const activeVersion = nodeData.versions.find(v => v.is_deployed) || nodeData.versions[0];
       
       // Create a visual node for the canvas
       const canvasNodeId = `canvas-node-${Date.now()}`;
@@ -247,8 +249,8 @@ export function FlowEditor() {
           icon: Database,
           description: nodeData.description || 'Node from API',
           config: {},
-          connector: nodeData.subnodes?.find(s => s.is_selected)?.name || 'Default',
-          connectorOptions: nodeData.subnodes?.map(s => s.name) || ['Default'],
+          connector: activeVersion?.subnodes?.find(s => s.is_selected)?.name || activeVersion?.subnodes?.[0]?.name || 'Default',
+          connectorOptions: activeVersion?.subnodes?.map(s => s.name) || ['Default'],
           nodeId: nodeId // Add the original node ID for subnode lookup
         },
       };

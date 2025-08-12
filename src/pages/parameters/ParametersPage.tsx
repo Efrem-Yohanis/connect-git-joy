@@ -37,12 +37,7 @@ export function ParametersPage() {
 
   const handleClone = async (param: any) => {
     try {
-      const clonedParam = await parameterService.createParameter({
-        key: `${param.key}_copy`,
-        default_value: param.default_value,
-        required: param.required,
-        datatype: "string"
-      });
+      const clonedParam = await parameterService.cloneParameter(param.id);
       toast({
         title: "Parameter cloned successfully",
         description: `Parameter ${clonedParam.key} has been created.`,
@@ -55,6 +50,52 @@ export function ParametersPage() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleExport = async (paramId: string) => {
+    try {
+      const blob = await parameterService.exportParameter(paramId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `parameter_${paramId}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast({
+        title: "Parameter exported successfully",
+        description: "The parameter has been downloaded as JSON.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error exporting parameter",
+        description: "Failed to export the parameter. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const importedParam = await parameterService.importParameter(file);
+      toast({
+        title: "Parameter imported successfully",
+        description: `Parameter ${importedParam.key} has been imported.`,
+      });
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error importing parameter",
+        description: "Failed to import the parameter. Please try again.",
+        variant: "destructive",
+      });
+    }
+    // Reset the input
+    event.target.value = '';
   };
 
   const handleDelete = async (paramId: string) => {
@@ -105,10 +146,19 @@ export function ParametersPage() {
               <List className="h-4 w-4" />
             </Button>
           </div>
-          <Button variant="outline" size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Import
+          <Button variant="outline" size="sm" asChild>
+            <label htmlFor="import-file" className="cursor-pointer">
+              <Plus className="h-4 w-4 mr-2" />
+              Import
+            </label>
           </Button>
+          <input
+            id="import-file"
+            type="file"
+            accept=".json"
+            onChange={handleImport}
+            className="hidden"
+          />
           <Button onClick={() => navigate("/parameters/new")}>
             <Plus className="h-4 w-4 mr-2" />
             Create New Parameter
@@ -147,7 +197,11 @@ export function ParametersPage() {
                       <Eye className="h-3 w-3 mr-1" />
                       View
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleExport(param.id)}
+                    >
                       <Download className="h-3 w-3 mr-1" />
                       Export
                     </Button>
@@ -180,7 +234,6 @@ export function ParametersPage() {
               <TableRow>
                 <TableHead>Key</TableHead>
                 <TableHead>Default Value</TableHead>
-                <TableHead>Node</TableHead>
                 <TableHead>Required</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -199,11 +252,6 @@ export function ParametersPage() {
                   </TableCell>
                   <TableCell>{param.default_value}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">
-                      {param.node}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
                     <Badge variant={param.required ? "default" : "secondary"}>
                       {param.required ? "Required" : "Optional"}
                     </Badge>
@@ -217,7 +265,11 @@ export function ParametersPage() {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleExport(param.id)}
+                      >
                         <Download className="h-4 w-4" />
                       </Button>
                       <Button 

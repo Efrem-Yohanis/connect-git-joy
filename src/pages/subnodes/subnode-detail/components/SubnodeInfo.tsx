@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { SubnodeDetail, SubnodeVersion } from "@/services/subnodeService";
-import { useNode } from "@/services/nodeService";
+import { nodeService } from "@/services/nodeService";
+import { useEffect, useState } from "react";
 
 interface SubnodeInfoProps {
   subnode: SubnodeDetail;
@@ -12,7 +13,19 @@ interface SubnodeInfoProps {
 
 export function SubnodeInfo({ subnode, selectedVersion }: SubnodeInfoProps) {
   const navigate = useNavigate();
-  const { data: nodeData } = useNode(subnode.node);
+  const [nodeData, setNodeData] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchNode = async () => {
+      try {
+        const data = await nodeService.getNode(subnode.node);
+        setNodeData(data);
+      } catch (err) {
+        console.error('Failed to fetch node:', err);
+      }
+    };
+    fetchNode();
+  }, [subnode.node]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();

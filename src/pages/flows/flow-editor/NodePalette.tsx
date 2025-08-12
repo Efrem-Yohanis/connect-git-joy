@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useNodes } from '@/services/nodeService';
+import { nodeService } from '@/services/nodeService';
+import { useState, useEffect } from 'react';
 import { 
   Database, 
   Filter, 
@@ -50,7 +51,27 @@ const getNodeColor = (nodeName: string) => {
 };
 
 export function NodePalette({ onAddNode }: NodePaletteProps) {
-  const { data: nodes, loading, error, refetch } = useNodes();
+  const [nodes, setNodes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchNodes = async () => {
+    try {
+      setLoading(true);
+      const nodeList = await nodeService.getAllNodes();
+      setNodes(nodeList);
+      setError(null);
+    } catch (err) {
+      setError('Failed to load nodes');
+      console.error('Error fetching nodes:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNodes();
+  }, []);
 
   if (loading) {
     return (
@@ -83,7 +104,7 @@ export function NodePalette({ onAddNode }: NodePaletteProps) {
           <div className="text-center space-y-2">
             <p className="text-sm text-destructive">{error}</p>
             <Button 
-              onClick={refetch} 
+              onClick={fetchNodes} 
               size="sm" 
               variant="outline"
               className="text-xs"
@@ -142,7 +163,7 @@ export function NodePalette({ onAddNode }: NodePaletteProps) {
                         {node.name}
                       </h4>
                       <p className="text-xs text-muted-foreground">
-                        {node.subnodes.length} subnode{node.subnodes.length !== 1 ? 's' : ''}
+                        v{node.version} • {node.versions?.length || 0} version{(node.versions?.length || 0) !== 1 ? 's' : ''}
                       </p>
                     </div>
                   </div>

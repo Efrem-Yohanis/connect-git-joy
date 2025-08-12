@@ -8,13 +8,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useNodes } from "@/services/nodeService";
+import { nodeService } from "@/services/nodeService";
 import { subnodeService } from "@/services/subnodeService";
 
 export function CreateSubnodePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { data: nodes, loading: nodesLoading, error: nodesError } = useNodes();
+  const [nodes, setNodes] = useState<any[]>([]);
+  const [nodesLoading, setNodesLoading] = useState(true);
+  const [nodesError, setNodesError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchNodes = async () => {
+      try {
+        const nodeList = await nodeService.getAllNodes();
+        setNodes(nodeList);
+      } catch (err: any) {
+        setNodesError(err.message || 'Failed to fetch nodes');
+      } finally {
+        setNodesLoading(false);
+      }
+    };
+    fetchNodes();
+  }, []);
   
   const [formData, setFormData] = useState({
     name: "",

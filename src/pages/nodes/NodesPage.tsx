@@ -20,6 +20,7 @@ interface Node {
   id: string;
   name: string;
   version: number;
+  active_version: number | null;
   created_at: string;
   updated_at: string;
   last_updated_by: string | null;
@@ -194,7 +195,9 @@ export function NodesPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-foreground text-sm flex items-center justify-between">
                   {node.name}
-                  <Badge variant="outline">v{node.version}</Badge>
+                  <Badge variant="outline">
+                    {node.active_version ? `v${node.active_version}` : 'No Active Version'}
+                  </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -274,7 +277,9 @@ export function NodesPage() {
                 <TableRow key={node.id}>
                   <TableCell className="font-medium">{node.name}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">v{node.version}</Badge>
+                    <Badge variant="outline">
+                      {node.active_version ? `v${node.active_version}` : 'No Active Version'}
+                    </Badge>
                   </TableCell>
                   <TableCell>{new Date(node.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>{node.last_updated_by || "System"}</TableCell>

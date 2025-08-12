@@ -14,6 +14,7 @@ import { NodesPage } from "@/pages/nodes/NodesPage";
 import { NodeDetailPage } from "@/pages/nodes/node-detail/NodeDetailPage";
 import { CreateNodePage } from "@/pages/nodes/create-node/CreateNodePage";
 import { EditNodePage } from "@/pages/nodes/edit-node/EditNodePage";
+import { TestNodePage } from "@/pages/nodes/test-node/TestNodePage";
 import { SubnodesPage } from "@/pages/subnodes/SubnodesPage";
 import { SubnodeDetailPage } from "@/pages/subnodes/subnode-detail/SubnodeDetailPage";
 import { EditSubnodePage } from "@/pages/subnodes/edit-subnode/EditSubnodePage";
@@ -50,6 +51,7 @@ const App = () => (
               <Route path="/nodes/new" element={<CreateNodePage />} />
               <Route path="/nodes/:id" element={<NodeDetailPage />} />
               <Route path="/nodes/:id/edit" element={<EditNodePage />} />
+              <Route path="/nodes/:id/test" element={<TestNodePage />} />
               <Route path="/subnodes" element={<SubnodesPage />} />
               <Route path="/subnodes/:id" element={<SubnodeDetailPage />} />
             <Route path="/subnodes/create" element={<CreateSubnodePage />} />

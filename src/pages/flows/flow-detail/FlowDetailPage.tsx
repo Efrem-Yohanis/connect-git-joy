@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { LoadingCard, LoadingSpinner } from "@/components/ui/loading";
 import { FlowCanvas } from "./FlowCanvas"; // Import FlowCanvas
 import { Play, Square, History, ChevronDown, CheckCircle, Clock, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -98,7 +99,7 @@ export function FlowDetailPage() {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingCard text="Loading flow details..." />;
   }
 
   if (error) {
@@ -320,8 +321,8 @@ export function FlowDetailPage() {
             </div>
             
             {versionsLoading ? (
-              <div className="text-center py-4 text-muted-foreground">
-                Loading versions...
+              <div className="flex justify-center py-4">
+                <LoadingSpinner />
               </div>
             ) : versions.length > 0 ? (
               <Table>
