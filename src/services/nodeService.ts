@@ -162,6 +162,7 @@ export const nodeService = {
   async getActiveNode(): Promise<Node | null> {
     try {
       const nodes = await this.getAllNodes();
+      if (!Array.isArray(nodes)) return null;
       return nodes.find(node => node.active_version !== null) || null;
     } catch (error) {
       console.error('Error fetching active node:', error);
