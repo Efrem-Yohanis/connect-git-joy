@@ -392,9 +392,10 @@ export function NodeDetailPage() {
 
       {/* Tabbed Sections */}
       <Tabs defaultValue="parameters" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="parameters">Parameters</TabsTrigger>
           <TabsTrigger value="subnodes">Subnodes</TabsTrigger>
+          <TabsTrigger value="script">Script</TabsTrigger>
         </TabsList>
         
         <TabsContent value="parameters" className="space-y-4">
@@ -408,6 +409,24 @@ export function NodeDetailPage() {
           <SubnodesSection
             subnodes={selectedVersion?.subnodes || []}
           />
+        </TabsContent>
+        
+        <TabsContent value="script" className="space-y-4">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Python Script</h3>
+              <span className="text-sm text-muted-foreground">
+                Version {selectedVersion?.version || node.version}
+              </span>
+            </div>
+            <div className="relative">
+              <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
+                <code className="language-python">
+                  {selectedVersion?.script || node.script || "No script content available"}
+                </code>
+              </pre>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
 
