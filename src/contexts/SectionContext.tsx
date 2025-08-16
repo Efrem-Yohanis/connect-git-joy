@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState } from 'react';
 
 interface SectionStatusCounts {
+  total: number;
   deployed: number;
-  running: number;
   drafted: number;
 }
 
@@ -18,8 +18,8 @@ const SectionContext = createContext<SectionContextType | undefined>(undefined);
 export function SectionProvider({ children }: { children: React.ReactNode }) {
   const [currentSection, setCurrentSection] = useState('Flows');
   const [statusCounts, setStatusCounts] = useState<SectionStatusCounts>({
+    total: 9,
     deployed: 3,
-    running: 1,
     drafted: 5
   });
 

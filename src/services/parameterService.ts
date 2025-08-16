@@ -12,14 +12,24 @@ const axiosInstance = axios.create({
 // Parameter interfaces based on the API documentation
 export interface Parameter {
   id: string;
-  node: string;
   key: string;
   default_value: string;
-  required: boolean;
-  last_updated_by: string | null;
-  last_updated_at: string;
-  is_active: boolean;
   datatype: string;
+  is_active: boolean;
+  created_at: string;
+  created_by: string | null;
+  // Keep these for backward compatibility
+  required?: boolean;
+  node?: string;
+  last_updated_by?: string | null;
+  last_updated_at?: string;
+}
+
+export interface ParametersResponse {
+  total: number;
+  published: number;
+  draft_count: number;
+  results: Parameter[];
 }
 
 export interface CreateParameterRequest {
@@ -33,6 +43,12 @@ export interface CreateParameterRequest {
 export const parameterService = {
   // List all parameters
   async getParameters(): Promise<Parameter[]> {
+    const response = await axiosInstance.get('parameters/');
+    return Array.isArray(response.data.results) ? response.data.results : [];
+  },
+
+  // Get parameters with metadata
+  async getParametersWithMetadata(): Promise<ParametersResponse> {
     const response = await axiosInstance.get('parameters/');
     return response.data;
   },
@@ -97,6 +113,48 @@ export const parameterService = {
     const response = await axiosInstance.post(`parameters/${id}/clone/`);
     return response.data;
   },
+};
+
+// Custom hook for parameters list with metadata
+export const useParametersWithMetadata = () => {
+  const [data, setData] = useState<ParametersResponse>({ total: 0, published: 0, draft_count: 0, results: [] });
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadParameters = async () => {
+      try {
+        console.log('Loading parameters with metadata from API...');
+        const response = await parameterService.getParametersWithMetadata();
+        console.log('Parameters with metadata loaded successfully:', response);
+        setData(response);
+        setError(null);
+      } catch (err: any) {
+        console.error('Error loading parameters:', err);
+        setError(err.response?.data?.error || err.message || 'Error fetching parameters');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadParameters();
+  }, []);
+
+  const refetch = async () => {
+    setLoading(true);
+    try {
+      const response = await parameterService.getParametersWithMetadata();
+      setData(response);
+      setError(null);
+    } catch (err: any) {
+      setError(err.response?.data?.error || err.message || 'Error fetching parameters');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { data, loading, error, refetch };
 };
 
 // Custom hook for parameters list

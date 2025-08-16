@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Upload, Download, Settings, Trash2, Eye, Grid2X2, List, Copy } from "lucide-react";
+import { Plus, Upload, Download, Settings, Trash2, Eye, Grid2X2, List, Copy, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,6 +12,12 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { useSubnodes, subnodeService } from "@/services/subnodeService";
 import { toast } from "sonner";
@@ -117,12 +123,11 @@ export function SubnodesPage() {
             </Button>
           </div>
           <Button variant="outline" size="sm">
-            <Upload className="h-4 w-4 mr-2" />
-            Import SubNode
+            <Upload className="h-4 w-4" />
           </Button>
           <Button onClick={() => navigate("/subnodes/create")}>
             <Plus className="h-4 w-4 mr-2" />
-            Create New SubNode
+            NEW
           </Button>
         </div>
       </div>
@@ -163,42 +168,36 @@ export function SubnodesPage() {
                   </div>
                 </div>
                 
-                <div className="pt-2 border-t border-border">
-                  <div className="text-xs font-medium text-foreground mb-2">Actions:</div>
-                  <div className="flex gap-2 flex-wrap">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => navigate(`/subnodes/${subnode.id}`)}
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      View
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleExport(subnode)}
-                    >
-                      <Download className="h-3 w-3 mr-1" />
-                      Export
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleClone(subnode)}
-                    >
-                      <Copy className="h-3 w-3 mr-1" />
-                      Clone
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleDelete(subnode.id)}
-                    >
-                      <Trash2 className="h-3 w-3 mr-1" />
-                      Delete
-                    </Button>
-                  </div>
+                <div className="pt-2 border-t border-border flex justify-between items-center">
+                  <div className="text-xs font-medium text-foreground">Actions:</div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-background border border-border shadow-lg z-50">
+                      <DropdownMenuItem onClick={() => navigate(`/subnodes/${subnode.id}`)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        View
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleExport(subnode)}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Export
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleClone(subnode)}>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Clone
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleDelete(subnode.id)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </CardContent>
             </Card>

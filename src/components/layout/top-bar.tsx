@@ -31,16 +31,16 @@ export function TopBar() {
             
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-muted-foreground">Deployed:</span>
-                <Badge variant="secondary" className="bg-success text-success-foreground">
-                  {statusCounts.deployed}
+                <span className="text-sm text-muted-foreground">Total:</span>
+                <Badge variant="secondary" className="bg-primary text-primary-foreground">
+                  {statusCounts.total}
                 </Badge>
               </div>
               
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-muted-foreground">Running:</span>
-                <Badge variant="secondary" className="bg-primary text-primary-foreground">
-                  {statusCounts.running}
+                <span className="text-sm text-muted-foreground">Deployed:</span>
+                <Badge variant="secondary" className="bg-success text-success-foreground">
+                  {statusCounts.deployed}
                 </Badge>
               </div>
               

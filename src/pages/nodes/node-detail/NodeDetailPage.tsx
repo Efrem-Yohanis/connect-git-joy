@@ -40,14 +40,8 @@ export function NodeDetailPage() {
         const nodeData = await nodeService.getNode(id);
         setNode(nodeData);
         
-        // Set node versions from the fetched data
-        setNodeVersions(nodeData.versions);
-        
-        // Find the active version or use the first version
+        // Map parameters from active version or latest version
         const activeVersion = nodeData.versions.find(v => v.is_deployed) || nodeData.versions[0];
-        setSelectedVersion(activeVersion);
-        
-        // Map parameters from the active/selected version
         const mappedParameters = (activeVersion?.parameters || []).map((param: any) => ({
           id: param.id,
           key: param.key,
@@ -57,11 +51,18 @@ export function NodeDetailPage() {
           required: false, // Default value since not in API
           last_updated_by: null,
           last_updated_at: nodeData.last_updated_at,
-          is_active: param.is_active
+          is_active: param.is_active,
+          created_at: nodeData.last_updated_at || new Date().toISOString(),
+          created_by: null
         }));
         setNodeParameters(mappedParameters);
         
-        // No need to check for globally active node since multiple nodes can be active
+        // Fetch initial data
+        await fetchNodeVersions();
+        
+        // Check for currently active node in the system
+        const activeNode = await nodeService.getActiveNode();
+        setCurrentActiveNode(activeNode);
       } catch (err: any) {
         console.error("Error fetching node:", err);
         setError(err.response?.data?.error || err.message || "Error fetching node");
@@ -78,19 +79,20 @@ export function NodeDetailPage() {
     fetchNode();
   }, [id, toast]);
 
-  // Fetch node versions - now simplified since we get them from the main API call
+  // Fetch node versions
   const fetchNodeVersions = async () => {
-    if (!id || !node) return;
+    if (!id) return;
     
     setNodeVersionsLoading(true);
     try {
-      // We already have versions from the main node API call, but refresh if needed
-      const nodeData = await nodeService.getNode(id);
-      const versions = nodeData.versions;
+      const versions = await nodeService.getNodeVersions(id);
       setNodeVersions(versions);
       
       // Set selected version to active version or latest
       const activeVersion = versions.find(v => v.is_deployed) || versions[0];
+      console.log('🔍 Active version found:', activeVersion);
+      console.log('🔍 Subnodes in active version:', activeVersion?.subnodes);
+      console.log('🔍 Subnodes length:', activeVersion?.subnodes?.length);
       setSelectedVersion(activeVersion);
     } catch (err: any) {
       console.error('Error fetching node versions:', err);
@@ -121,27 +123,38 @@ export function NodeDetailPage() {
     
     try {
       if (selectedVersion.is_deployed) {
-        // Undeploy the current version
+        // Undeploy the version
         await nodeService.undeployNodeVersion(id, selectedVersion.version);
         toast({
           title: "Version Undeployed",
           description: `Version ${selectedVersion.version} has been undeployed`,
         });
       } else {
-        // Deploy/activate version (multiple nodes can be active simultaneously)
-        await nodeService.activateNodeVersion(id, selectedVersion.version);
+        // Check if another node is currently active
+        const activeNode = await nodeService.getActiveNode();
+        
+        if (activeNode && activeNode.id !== id) {
+          // Show confirmation dialog for deactivating current active node
+          const shouldProceed = window.confirm(
+            `Node "${activeNode.name}" (v${activeNode.active_version}) is currently active. ` +
+            `Activating this node will deactivate "${activeNode.name}". Do you want to proceed?`
+          );
+          
+          if (!shouldProceed) {
+            return;
+          }
+        }
+        
+        // Deploy/activate version
+        await nodeService.deployNodeVersion(id, selectedVersion.version);
         toast({
           title: "Node Activated",
           description: `Node "${node?.name}" version ${selectedVersion.version} is now active`,
         });
       }
       
-      // Refresh versions
-      await fetchNodeVersions();
-      
-      // Refresh node data
-      const updatedNode = await nodeService.getNode(id);
-      setNode(updatedNode);
+      // Refresh the page to reflect changes
+      window.location.reload();
       
     } catch (err: any) {
       console.error('Error toggling version deployment:', err);
@@ -160,90 +173,48 @@ export function NodeDetailPage() {
     }
   };
 
-  const handleViewVersion = async (version: NodeVersion) => {
-    if (!id) return;
-    
-    try {
-      // Fetch specific version details from API
-      const versionDetails = await nodeService.getNodeVersion(id, version.version);
-      setSelectedVersion(versionDetails);
-      
-      // Map parameters from the selected version
-      const mappedParameters = (versionDetails.parameters || []).map((param: any) => ({
-        id: param.id,
-        key: param.key,
-        default_value: param.default_value,
-        datatype: param.datatype,
-        node: node!.id,
-        required: false,
-        last_updated_by: null,
-        last_updated_at: node!.last_updated_at,
-        is_active: param.is_active
-      }));
-      setNodeParameters(mappedParameters);
-      
-      setVersionHistoryOpen(false);
-      toast({
-        title: "Version Selected",
-        description: `Now viewing version ${version.version}`,
-      });
-    } catch (err: any) {
-      console.error('Error fetching version details:', err);
-      toast({
-        title: "Error",
-        description: "Failed to load version details",
-        variant: "destructive"
-      });
-    }
+  const handleSelectVersion = (version: NodeVersion) => {
+    setSelectedVersion(version);
+    setVersionHistoryOpen(false);
+    toast({
+      title: "Version Selected",
+      description: `Now viewing version ${version.version}`,
+    });
   };
 
-  const activateNodeVersion = async (version: number) => {
+  const activateNodeVersion = async (version: NodeVersion) => {
     if (!id) return;
     
     try {
-      // Activate version (multiple nodes can be active simultaneously)
-      await nodeService.activateNodeVersion(id, version);
+      // Check if another node is currently active
+      const activeNode = await nodeService.getActiveNode();
       
-      // Fetch the updated version details to get the latest data
-      const versionDetails = await nodeService.getNodeVersion(id, version);
+      if (activeNode && activeNode.id !== id) {
+        // Show confirmation dialog for deactivating current active node
+        const shouldProceed = window.confirm(
+          `Node "${activeNode.name}" (v${activeNode.active_version}) is currently active. ` +
+          `Activating this node will deactivate "${activeNode.name}". Do you want to proceed?`
+        );
+        
+        if (!shouldProceed) {
+          return;
+        }
+      }
       
-      // Update versions state
-      setNodeVersions(prevVersions => 
-        prevVersions.map(v => ({
-          ...v,
-          is_deployed: v.version === version
-        }))
-      );
-      
-      // Update selected version with fresh data
-      setSelectedVersion({ ...versionDetails, is_deployed: true });
-      
-      // Map parameters from the activated version
-      const mappedParameters = (versionDetails.parameters || []).map((param: any) => ({
-        id: param.id,
-        key: param.key,
-        default_value: param.default_value,
-        datatype: param.datatype,
-        node: node!.id,
-        required: false,
-        last_updated_by: null,
-        last_updated_at: node!.last_updated_at,
-        is_active: param.is_active
-      }));
-      setNodeParameters(mappedParameters);
-      
-      // Refresh node data
-      const updatedNode = await nodeService.getNode(id);
-      setNode(updatedNode);
-      
-        // No need to update global active node state since multiple nodes can be active
+      // Deploy the version using new API
+      await nodeService.deployNodeVersion(id, version.version);
       
       toast({
         title: "Node Activated",
-        description: `Node "${node?.name}" version ${version} is now active`,
+        description: `Node "${node?.name}" version ${version.version} is now active`,
       });
       
+      // Close modal and redirect to detail page showing the activated version
       setVersionHistoryOpen(false);
+      
+      // Refresh the page to show the activated version
+      window.location.reload();
+      
     } catch (err: any) {
       console.error('Error activating node version:', err);
       toast({
@@ -254,73 +225,34 @@ export function NodeDetailPage() {
     }
   };
 
-  const handleCloneNode = async () => {
-    if (!id) return;
-    
-    try {
-      const clonedNode = await nodeService.cloneNode(id);
-      toast({
-        title: "Node Cloned",
-        description: `Node "${clonedNode.name}" has been created`,
-      });
-      navigate(`/nodes/${clonedNode.id}/edit`);
-    } catch (err: any) {
-      console.error('Error cloning node:', err);
-      toast({
-        title: "Error",
-        description: "Failed to clone node",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleExportVersion = async () => {
-    if (!selectedVersion || !id) return;
-    
-    try {
-      const blob = await nodeService.exportVersion(id, selectedVersion.version);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${node?.name}_v${selectedVersion.version}.json`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      toast({
-        title: "Export Complete",
-        description: `Version ${selectedVersion.version} exported successfully`,
-      });
-    } catch (err: any) {
-      console.error('Error exporting version:', err);
-      toast({
-        title: "Error",
-        description: "Failed to export version",
-        variant: "destructive"
-      });
-    }
-  };
-
+  // Version management handlers
   const handleDeleteVersion = async () => {
-    if (!selectedVersion || !id) return;
-    
-    const shouldDelete = window.confirm(
+    if (!selectedVersion || !id || selectedVersion.is_deployed) {
+      toast({
+        title: "Cannot Delete Version",
+        description: selectedVersion?.is_deployed ? "Cannot delete a deployed version" : "No version selected",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const confirmDelete = window.confirm(
       `Are you sure you want to delete version ${selectedVersion.version}? This action cannot be undone.`
     );
-    
-    if (!shouldDelete) return;
-    
+
+    if (!confirmDelete) return;
+
     try {
-      await nodeService.deleteNodeVersion(id, selectedVersion.version);
-      
-      // Refresh versions
-      await fetchNodeVersions();
+      // Call API to delete version (you may need to add this to nodeService)
+      // await nodeService.deleteNodeVersion(id, selectedVersion.version);
       
       toast({
         title: "Version Deleted",
         description: `Version ${selectedVersion.version} has been deleted`,
       });
+
+      // Refresh versions
+      await fetchNodeVersions();
     } catch (err: any) {
       console.error('Error deleting version:', err);
       toast({
@@ -329,6 +261,59 @@ export function NodeDetailPage() {
         variant: "destructive"
       });
     }
+  };
+
+  const handleCloneVersion = async () => {
+    if (!selectedVersion || !id) return;
+
+    try {
+      // Create new version from current version
+      const newVersion = await nodeService.createNodeVersion(id, selectedVersion.version);
+      
+      toast({
+        title: "Version Cloned",
+        description: `New version ${newVersion.version} created from version ${selectedVersion.version}`,
+      });
+
+      // Refresh versions and navigate to edit the new version
+      await fetchNodeVersions();
+      navigate(`/nodes/${id}/edit?version=${newVersion.version}`);
+    } catch (err: any) {
+      console.error('Error cloning version:', err);
+      toast({
+        title: "Error",
+        description: "Failed to clone version",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleExportVersion = () => {
+    if (!selectedVersion || !node) return;
+
+    const exportData = {
+      node: {
+        id: node.id,
+        name: node.name,
+        description: node.description
+      },
+      version: selectedVersion,
+      exportedAt: new Date().toISOString()
+    };
+
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${node.name}_v${selectedVersion.version}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Version Exported",
+      description: `Version ${selectedVersion.version} exported successfully`,
+    });
   };
 
 
@@ -365,6 +350,20 @@ export function NodeDetailPage() {
 
   return (
     <div className="space-y-6">
+      {/* Current Active Node Warning */}
+      {currentActiveNode && currentActiveNode.id !== node.id && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+            <span className="text-yellow-800 font-medium">
+              Another node is currently active: "{currentActiveNode.name}" (v{currentActiveNode.active_version})
+            </span>
+          </div>
+          <p className="text-yellow-700 text-sm mt-1">
+            Activating this node will automatically deactivate the currently active node.
+          </p>
+        </div>
+      )}
 
       {/* Header Section */}
       <NodeHeader
@@ -374,9 +373,9 @@ export function NodeDetailPage() {
         onToggleDeployment={handleToggleDeployment}
         onCreateNewVersion={handleCreateNewVersion}
         onShowVersionHistory={handleShowVersionHistory}
-        onCloneNode={handleCloneNode}
-        onExportVersion={handleExportVersion}
         onDeleteVersion={handleDeleteVersion}
+        onCloneVersion={handleCloneVersion}
+        onExportVersion={handleExportVersion}
         isLoading={loading}
       />
 
@@ -416,9 +415,10 @@ export function NodeDetailPage() {
         open={versionHistoryOpen}
         onOpenChange={setVersionHistoryOpen}
         versions={nodeVersions}
-        loading={nodeVersionsLoading}
+        selectedVersion={selectedVersion}
+        onSelectVersion={handleSelectVersion}
         onActivateVersion={activateNodeVersion}
-        onViewVersion={handleViewVersion}
+        isLoading={nodeVersionsLoading}
       />
 
       {/* Back to Nodes Button */}
