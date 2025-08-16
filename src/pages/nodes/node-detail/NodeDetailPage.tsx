@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { nodeService, type Node, type NodeVersion } from "@/services/nodeService";
 import { parameterService, type Parameter } from "@/services/parameterService";
@@ -389,26 +390,26 @@ export function NodeDetailPage() {
         subnodesCount={selectedVersion?.subnodes?.length || 0}
       />
 
-      <Separator />
-
-      {/* Properties Section */}
-      <PropertiesSection
-        properties={nodeParameters}
-        loading={false}
-      />
-
-      <Separator />
-
-      {/* Subnodes Section */}
-      {(() => {
-        console.log('🔍 Rendering SubnodesSection - selectedVersion:', selectedVersion);
-        console.log('🔍 Rendering SubnodesSection - subnodes:', selectedVersion?.subnodes);
-        return (
+      {/* Tabbed Sections */}
+      <Tabs defaultValue="parameters" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="parameters">Parameters</TabsTrigger>
+          <TabsTrigger value="subnodes">Subnodes</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="parameters" className="space-y-4">
+          <PropertiesSection
+            properties={nodeParameters}
+            loading={false}
+          />
+        </TabsContent>
+        
+        <TabsContent value="subnodes" className="space-y-4">
           <SubnodesSection
             subnodes={selectedVersion?.subnodes || []}
           />
-        );
-      })()}
+        </TabsContent>
+      </Tabs>
 
       {/* Version History Modal */}
       <VersionHistoryModal
