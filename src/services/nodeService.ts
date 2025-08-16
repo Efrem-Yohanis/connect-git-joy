@@ -80,6 +80,14 @@ export interface Node {
   updated_at: string;
   last_updated_by: string | null;
   last_updated_at: string;
+  published_version?: {
+    id: string;
+    version: number;
+    state: string;
+    script_url: string;
+    parameters: any[];
+    subnodes: any[];
+  };
 }
 
 // API Service Functions

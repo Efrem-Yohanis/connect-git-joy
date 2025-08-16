@@ -11,6 +11,7 @@ import { NodeSummary } from "./components/NodeSummary";
 import { PropertiesSection } from "./components/PropertiesSection";
 import { SubnodesSection } from "./components/SubnodesSection";
 import { VersionHistoryModal } from "./components/VersionHistoryModal";
+import axios from 'axios';
 
 export function NodeDetailPage() {
   const { id } = useParams();
@@ -32,6 +33,11 @@ export function NodeDetailPage() {
 
   // Parameters management
   const [nodeParameters, setNodeParameters] = useState<Parameter[]>([]);
+  
+  // Script content management
+  const [scriptContent, setScriptContent] = useState<string>("");
+  const [scriptLoading, setScriptLoading] = useState(false);
+  const [scriptError, setScriptError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchNode = async () => {
@@ -106,6 +112,32 @@ export function NodeDetailPage() {
       setNodeVersionsLoading(false);
     }
   };
+
+  // Fetch script content from URL
+  const fetchScriptContent = async (scriptUrl: string) => {
+    if (!scriptUrl) return;
+    
+    setScriptLoading(true);
+    setScriptError(null);
+    
+    try {
+      const response = await axios.get(scriptUrl);
+      setScriptContent(response.data);
+    } catch (err: any) {
+      console.error('Error fetching script content:', err);
+      setScriptError('Failed to load script content');
+      setScriptContent('');
+    } finally {
+      setScriptLoading(false);
+    }
+  };
+
+  // Effect to fetch script content when node data is loaded
+  useEffect(() => {
+    if (node?.published_version?.script_url) {
+      fetchScriptContent(node.published_version.script_url);
+    }
+  }, [node?.published_version?.script_url]);
 
 
   // Event handlers
@@ -420,11 +452,21 @@ export function NodeDetailPage() {
               </span>
             </div>
             <div className="relative">
-              <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
-                <code className="language-python">
-                  {selectedVersion?.script || node.script || "No script content available"}
-                </code>
-              </pre>
+              {scriptLoading ? (
+                <div className="flex items-center justify-center h-32 bg-muted rounded-lg">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                </div>
+              ) : scriptError ? (
+                <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-lg">
+                  {scriptError}
+                </div>
+              ) : (
+                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm max-h-96 overflow-y-auto">
+                  <code className="language-python whitespace-pre-wrap">
+                    {scriptContent || "No script content available"}
+                  </code>
+                </pre>
+              )}
             </div>
           </div>
         </TabsContent>
