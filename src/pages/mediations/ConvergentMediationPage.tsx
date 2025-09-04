@@ -31,7 +31,7 @@ export function ConvergentMediationPage() {
 
   return (
     <MediationLayout
-      title="Convergent Billing"
+      title=""
       description=""
       totalFlows={convergentFlows.length}
       runningFlows={runningFlows}

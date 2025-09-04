@@ -31,7 +31,7 @@ export function ChargingMediationPage() {
 
   return (
     <MediationLayout
-      title="Charging Gateway"
+      title=""
       description=""
       totalFlows={chargingFlows.length}
       runningFlows={runningFlows}

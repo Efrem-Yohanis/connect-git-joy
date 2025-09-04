@@ -31,7 +31,7 @@ export function NCCMediationPage() {
 
   return (
     <MediationLayout
-      title="Network Call Control"
+      title=""
       description=""
       totalFlows={nccFlows.length}
       runningFlows={runningFlows}
