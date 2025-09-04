@@ -82,10 +82,6 @@ const quickActions = [
 export function HomePage() {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    navigate("/flows");
-  }, [navigate]);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Hero Section */}

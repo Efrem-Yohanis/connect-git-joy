@@ -9,12 +9,14 @@ import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Settings, Trash2, Play, Copy, Plus, Square, ExternalLink } from 'lucide-react';
 import { subnodeService } from '@/services/subnodeService';
+import { flowService } from '@/services/flowService';
 import { toast } from 'sonner';
 
 interface PropertiesPanelProps {
   selectedNode: Node | null;
   onUpdateNode: (nodeId: string, data: any) => void;
   onDeleteNode: (nodeId: string) => void;
+  flowId?: string; // Add flowId for API calls
 }
 
 interface Subnode {
@@ -24,9 +26,31 @@ interface Subnode {
   parameters?: any[];
 }
 
-export function PropertiesPanel({ selectedNode, onUpdateNode, onDeleteNode }: PropertiesPanelProps) {
+export function PropertiesPanel({ selectedNode, onUpdateNode, onDeleteNode, flowId }: PropertiesPanelProps) {
   const [availableSubnodes, setAvailableSubnodes] = useState<Subnode[]>([]);
   const [loadingSubnodes, setLoadingSubnodes] = useState(false);
+
+  // Fetch subnodes for the selected node - MUST be before early return
+  useEffect(() => {
+    if (selectedNode?.data?.nodeId) {
+      setLoadingSubnodes(true);
+      // Filter subnodes by node ID from the global subnodes list
+      subnodeService.getAllSubnodes()
+        .then(allSubnodes => {
+          const nodeSubnodes = allSubnodes.results.filter(subnode => subnode.node_family === selectedNode.data.nodeId);
+          setAvailableSubnodes(nodeSubnodes);
+        })
+        .catch(error => {
+          console.error('Error fetching subnodes:', error);
+          toast.error('Failed to load subnodes');
+        })
+        .finally(() => {
+          setLoadingSubnodes(false);
+        });
+    } else {
+      setAvailableSubnodes([]);
+    }
+  }, [selectedNode?.data?.nodeId]);
 
   if (!selectedNode) {
     return (
@@ -42,44 +66,41 @@ export function PropertiesPanel({ selectedNode, onUpdateNode, onDeleteNode }: Pr
     );
   }
 
-  // Fetch subnodes for the selected node
-  useEffect(() => {
-    if (selectedNode?.data?.nodeId) {
-      setLoadingSubnodes(true);
-      // Filter subnodes by node ID from the global subnodes list
-      subnodeService.getAllSubnodes()
-        .then(allSubnodes => {
-          const nodeSubnodes = allSubnodes.filter(subnode => subnode.node === selectedNode.data.nodeId);
-          setAvailableSubnodes(nodeSubnodes);
-        })
-        .catch(error => {
-          console.error('Error fetching subnodes:', error);
-          toast.error('Failed to load subnodes');
-        })
-        .finally(() => {
-          setLoadingSubnodes(false);
-        });
-    } else {
-      setAvailableSubnodes([]);
-    }
-  }, [selectedNode?.data?.nodeId]);
-
-  const handleSubnodeSelection = (subnodeId: string) => {
+  const handleSubnodeSelection = async (subnodeId: string) => {
     if (!selectedNode?.data) return;
+    
     const selectedSubnode = availableSubnodes.find(sub => sub.id === subnodeId);
+    
+    // Optimistically update UI first
     onUpdateNode(selectedNode.id, {
       ...(selectedNode.data as Record<string, any>),
       selectedSubnode: selectedSubnode,
       subnodeId: subnodeId,
     });
+    
+    // Make real-time API call if flowId is provided
+    if (flowId && selectedNode.data?.nodeId) {
+      try {
+        await flowService.setFlowNodeSubnode(String(selectedNode.data.nodeId), subnodeId);
+        console.log('✅ Subnode selection updated successfully via API');
+        toast.success(`Subnode "${selectedSubnode?.name}" selected successfully`);
+      } catch (error) {
+        console.error('❌ Error updating subnode selection:', error);
+        toast.error('Failed to update subnode selection');
+        
+        // Revert optimistic update on error
+        onUpdateNode(selectedNode.id, {
+          ...(selectedNode.data as Record<string, any>),
+          selectedSubnode: undefined,
+          subnodeId: undefined,
+        });
+      }
+    }
   };
 
   const handleLabelChange = (value: string) => {
-    if (!selectedNode?.data) return;
-    onUpdateNode(selectedNode.id, {
-      ...(selectedNode.data as Record<string, any>),
-      label: value,
-    });
+    // Label is now read-only, this function is kept for compatibility
+    console.log('Label change attempted (read-only):', value);
   };
 
   const handleDescriptionChange = (value: string) => {
@@ -90,17 +111,7 @@ export function PropertiesPanel({ selectedNode, onUpdateNode, onDeleteNode }: Pr
     });
   };
 
-  const handleParameterChange = (key: string, value: string) => {
-    if (!selectedNode?.data) return;
-    const nodeData = selectedNode.data as Record<string, any>;
-    onUpdateNode(selectedNode.id, {
-      ...nodeData,
-      parameters: {
-        ...(nodeData.parameters || {}),
-        [key]: value,
-      },
-    });
-  };
+  // Remove parameter handlers since parameters section is removed
 
   return (
     <div className="w-80 bg-card border-l border-border shadow-sm">
@@ -143,8 +154,9 @@ export function PropertiesPanel({ selectedNode, onUpdateNode, onDeleteNode }: Pr
             <Input
               id="label"
               value={String(selectedNode.data?.label || '')}
-              onChange={(e) => handleLabelChange(e.target.value)}
+              readOnly
               placeholder="Node label"
+              className="bg-muted"
             />
           </div>
 
@@ -242,42 +254,6 @@ export function PropertiesPanel({ selectedNode, onUpdateNode, onDeleteNode }: Pr
           )}
         </div>
 
-        <Separator />
-
-        {/* Parameters */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium text-foreground">Parameters</h3>
-            <Button size="sm" variant="outline">
-              <Plus className="w-3 h-3 mr-1" />
-              Add
-            </Button>
-          </div>
-
-          {selectedNode.data && (selectedNode.data as any).parameters && Object.keys((selectedNode.data as any).parameters).length > 0 ? (
-            <div className="space-y-3">
-              {Object.entries((selectedNode.data as any).parameters).map(([key, value]) => (
-                <div key={key} className="space-y-2">
-                  <Label htmlFor={key} className="text-sm font-medium">
-                    {key}
-                  </Label>
-                  <Input
-                    id={key}
-                    value={String(value)}
-                    onChange={(e) => handleParameterChange(key, e.target.value)}
-                    placeholder={`${key} value`}
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-4 text-muted-foreground text-sm">
-              No parameters defined
-            </div>
-          )}
-        </div>
-
-        <Separator />
 
         {/* Node Info */}
         <div className="space-y-2">

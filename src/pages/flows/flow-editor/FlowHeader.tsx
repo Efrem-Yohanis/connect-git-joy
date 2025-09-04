@@ -45,11 +45,20 @@ export function FlowHeader({ flowName, onAction }: FlowHeaderProps) {
         <div className="flex items-center gap-2">
           <Button 
             size="sm" 
-            variant="outline"
-            onClick={() => onAction('save')}
+            variant="default"
+            onClick={async () => {
+              try {
+                // Add validation and redirect logic here
+                await new Promise(resolve => setTimeout(resolve, 500)); // Mock delay
+                onAction('save');
+                // Navigate to flows page would be handled by parent component
+              } catch (error) {
+                console.error('Save failed:', error);
+              }
+            }}
           >
             <Save className="w-4 h-4 mr-1" />
-            Save
+            Save Flow
           </Button>
         </div>
       </div>

@@ -1,17 +1,18 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useSubnode, subnodeService, SubnodeVersion } from "@/services/subnodeService";
+import { useSubnode, subnodeService, SubnodeVersionWithParametersByNodeVersion } from "@/services/subnodeService";
 import { toast } from "sonner";
 import { SubnodeHeader } from "./components/SubnodeHeader";
 import { SubnodeInfo } from "./components/SubnodeInfo";
 import { ParameterValuesTable } from "./components/ParameterValuesTable";
 import { VersionHistoryModal } from "./components/VersionHistoryModal";
 import { CreateVersionModal } from "./components/CreateVersionModal";
+import { LoadingCard } from "@/components/ui/loading";
 
 export function SubnodeDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [selectedVersion, setSelectedVersion] = useState<SubnodeVersion | null>(null);
+  const [selectedVersion, setSelectedVersion] = useState<SubnodeVersionWithParametersByNodeVersion | null>(null);
   const [showVersionHistoryModal, setShowVersionHistoryModal] = useState(false);
   const [showCreateVersionModal, setShowCreateVersionModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,12 +34,14 @@ export function SubnodeDetailPage() {
         }
       }
       
-      // Find the active version first
-      const activeVersion = subnode.versions.find(v => v.is_deployed);
-      if (activeVersion) {
-        setSelectedVersion(activeVersion);
+      // If there's a published version, use it
+      if (subnode.published_version) {
+        setSelectedVersion(subnode.published_version);
+      } else if (subnode.last_version) {
+        // Use last version if no published version
+        setSelectedVersion(subnode.last_version);
       } else {
-        // If no active version, select the latest version by number
+        // Fallback to latest version by number
         const sortedVersions = [...subnode.versions].sort((a, b) => b.version - a.version);
         setSelectedVersion(sortedVersions[0]);
       }
@@ -46,14 +49,7 @@ export function SubnodeDetailPage() {
   }, [subnode, versionParam]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading subnode...</p>
-        </div>
-      </div>
-    );
+    return <LoadingCard text="Loading subnode..." className="min-h-[400px]" />;
   }
 
   if (error || !subnode) {
@@ -150,12 +146,12 @@ export function SubnodeDetailPage() {
     }
   };
 
-  const handleSelectVersion = (version: SubnodeVersion) => {
+  const handleSelectVersion = (version: SubnodeVersionWithParametersByNodeVersion) => {
     setSelectedVersion(version);
     setShowVersionHistoryModal(false);
   };
 
-  const handleActivateVersionFromModal = async (version: SubnodeVersion) => {
+  const handleActivateVersionFromModal = async (version: SubnodeVersionWithParametersByNodeVersion) => {
     setIsLoading(true);
     try {
       await subnodeService.activateVersion(id!, version.version);
@@ -178,11 +174,12 @@ export function SubnodeDetailPage() {
       <SubnodeHeader
         subnode={subnode}
         selectedVersion={selectedVersion}
-        onEditVersion={handleEditVersion}
+        onEditVersion={() => {}} // Disabled for configuration view
         onDeployVersion={handleDeployVersion}
         onUndeployVersion={handleUndeployVersion}
-        onCreateNewVersion={() => setShowCreateVersionModal(true)}
+        onCreateNewVersion={() => {}} // Disabled for configuration view
         onShowVersionHistory={() => setShowVersionHistoryModal(true)}
+        onRefresh={refetch}
         isLoading={isLoading}
       />
 

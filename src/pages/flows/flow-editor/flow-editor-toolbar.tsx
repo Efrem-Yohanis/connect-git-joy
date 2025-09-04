@@ -1,43 +1,41 @@
-import { Save, Play, Square, Upload, Trash2, ArrowLeft } from "lucide-react";
+import { Save, Trash2, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { flowService } from "@/services/flowService";
 
 interface FlowEditorToolbarProps {
   flowName: string;
   onFlowNameChange: (name: string) => void;
   onDeleteNode: () => void;
   hasSelectedNode: boolean;
+  flowId?: string;
 }
 
 export function FlowEditorToolbar({ 
   flowName, 
   onFlowNameChange, 
   onDeleteNode,
-  hasSelectedNode 
+  hasSelectedNode,
+  flowId
 }: FlowEditorToolbarProps) {
   const navigate = useNavigate();
 
-  const handleSave = () => {
-    toast.success("Flow saved successfully!");
-    navigate("/flows");
-  };
-
-  const handleDeploy = () => {
-    toast.success("Flow deployed successfully!");
-  };
-
-  const handleStart = () => {
-    toast.success("Flow started successfully!");
-  };
-
-  const handleStop = () => {
-    toast.success("Flow stopped successfully!");
-  };
-
-  const handleExport = () => {
-    toast.success("Flow exported successfully!");
+  const handleSave = async () => {
+    try {
+      // Validate first
+      const result = await flowService.validateFlow(flowId || flowName);
+      
+      if (result.valid) {
+        toast.success("Flow saved and validated successfully!");
+        navigate("/flows");
+      } else {
+        toast.error(`Validation failed: ${result.errors?.length || 0} errors found`);
+      }
+    } catch (error) {
+      toast.error("Failed to save flow");
+    }
   };
 
   return (
@@ -62,26 +60,10 @@ export function FlowEditorToolbar({
           </>
         )}
         
-        <Button variant="outline" size="sm" onClick={handleSave}>
+        <Button variant="default" size="sm" onClick={handleSave}>
           <Save className="h-4 w-4 mr-2" />
           Save Flow
         </Button>
-        
-        <Button variant="outline" size="sm" onClick={handleDeploy}>
-          <Upload className="h-4 w-4 mr-2" />
-          Deploy Flow
-        </Button>
-        
-        <Button variant="outline" size="sm" onClick={handleStart}>
-          <Play className="h-4 w-4 mr-2" />
-          Start Flow
-        </Button>
-        
-        <Button variant="outline" size="sm" onClick={handleStop}>
-          <Square className="h-4 w-4 mr-2" />
-          Stop Flow
-        </Button>
-        
       </div>
     </div>
   );

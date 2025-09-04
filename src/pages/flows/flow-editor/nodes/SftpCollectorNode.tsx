@@ -73,7 +73,7 @@ export const SftpCollectorNode = memo(({ data, selected }: SftpCollectorNodeProp
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs">
-              SFTP Collector
+              {data.label}
             </Badge>
             {data.active_version !== null ? (
               <Badge variant="default" className="text-xs bg-green-500 text-white">

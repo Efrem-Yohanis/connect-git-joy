@@ -42,7 +42,7 @@ export const AsciiDecoderNode = memo(({ data, selected }: AsciiDecoderNodeProps)
         
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs">
-            ASCII Decoder
+            {data.label}
           </Badge>
           {data.subnodes && (
             <Badge variant="secondary" className="text-xs">

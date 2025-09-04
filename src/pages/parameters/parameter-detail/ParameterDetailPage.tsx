@@ -129,16 +129,7 @@ export function ParameterDetailPage() {
           </div>
           
           <div className="flex items-center space-x-2">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={handleEdit}
-              disabled={parameter.is_active}
-              title="Edit Parameter"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-
+            {/* Edit button removed for configuration view */}
             {parameter.is_active ? (
               <Button 
                 variant="outline" 

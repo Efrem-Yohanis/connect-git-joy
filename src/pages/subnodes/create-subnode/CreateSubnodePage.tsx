@@ -35,7 +35,7 @@ export function CreateSubnodePage() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    selectedNodeId: "",
+    node_family: "",
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,7 +58,7 @@ export function CreateSubnodePage() {
       return;
     }
 
-    if (!formData.selectedNodeId) {
+    if (!formData.node_family) {
       toast({
         title: "Validation Error",
         description: "Please select a parent node",
@@ -69,10 +69,10 @@ export function CreateSubnodePage() {
 
     setIsSubmitting(true);
     try {
-      await subnodeService.createSubnode({
+      const newSubnode = await subnodeService.createSubnode({
         name: formData.name,
         description: formData.description,
-        node: formData.selectedNodeId
+        node_family: formData.node_family
       });
       
       toast({
@@ -80,11 +80,13 @@ export function CreateSubnodePage() {
         description: "Subnode created successfully"
       });
       
+      // Navigate to subnodes list page, since we don't have the full subnode detail from create response
       navigate('/subnodes');
     } catch (error: any) {
+      console.error("Create subnode error:", error);
       toast({
-        title: "Error",
-        description: error.response?.data?.detail || "Failed to create subnode",
+        title: "Error", 
+        description: error.response?.data?.detail || error.response?.data?.error || "Failed to create subnode",
         variant: "destructive"
       });
     } finally {
@@ -140,8 +142,8 @@ export function CreateSubnodePage() {
             <div className="space-y-2">
               <Label htmlFor="parentNode">Select Parent Node *</Label>
               <Select 
-                value={formData.selectedNodeId}
-                onValueChange={(value) => handleInputChange('selectedNodeId', value)}
+                value={formData.node_family}
+                onValueChange={(value) => handleInputChange('node_family', value)}
                 disabled={nodesLoading}
               >
                 <SelectTrigger>
@@ -178,7 +180,7 @@ export function CreateSubnodePage() {
         </Button>
         <Button 
           onClick={handleSave} 
-          disabled={!formData.selectedNodeId || isSubmitting || nodesLoading}
+          disabled={!formData.node_family || isSubmitting || nodesLoading}
         >
           {isSubmitting ? "Creating..." : "Create Subnode"}
         </Button>

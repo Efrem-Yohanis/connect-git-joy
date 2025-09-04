@@ -42,7 +42,7 @@ export const Asn1DecoderNode = memo(({ data, selected }: Asn1DecoderNodeProps) =
         
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs">
-            ASN.1 Decoder
+            {data.label}
           </Badge>
           {data.subnodes && (
             <Badge variant="secondary" className="text-xs">

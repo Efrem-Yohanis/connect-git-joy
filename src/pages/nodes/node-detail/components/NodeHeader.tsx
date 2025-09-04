@@ -2,12 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Edit, Play, Square, History, Plus, TestTube, Trash2, Copy, Download, MoreVertical } from "lucide-react";
-import { Node, NodeVersion } from "@/services/nodeService";
+import { Node, NodeVersionDetail } from "@/services/nodeService";
 import { useNavigate } from "react-router-dom";
 
 interface NodeHeaderProps {
   node: Node;
-  selectedVersion: NodeVersion | null;
+  selectedVersion: NodeVersionDetail | null;
   onEditVersion: () => void;
   onToggleDeployment: () => void;
   onCreateNewVersion: () => void;
@@ -31,8 +31,8 @@ export function NodeHeader({
   isLoading = false
 }: NodeHeaderProps) {
   const navigate = useNavigate();
-  const isDeployed = selectedVersion?.is_deployed;
-  const isEditable = selectedVersion && !selectedVersion.is_deployed;
+  const isDeployed = selectedVersion?.state === 'published';
+  const isEditable = selectedVersion && selectedVersion.state !== 'published';
 
   const handleTestNode = () => {
     navigate(`/nodes/${node.id}/test`);
@@ -55,7 +55,7 @@ export function NodeHeader({
         <div className="flex items-center space-x-4">
           <h1 className="text-4xl font-bold">{node.name}</h1>
           <Badge variant="outline" className="text-base px-3 py-1">
-            v{selectedVersion?.version || node.version}
+            v{selectedVersion?.version || node.published_version?.version}
           </Badge>
           {getStatusBadge()}
         </div>

@@ -14,8 +14,10 @@ export interface SubnodeListItem {
   id: string;
   name: string;
   description: string;
-  node: string;
+  node_family: string;
+  node_family_name: string;
   active_version: number | null;
+  published: boolean;
   original_version: number;
   version_comment: string | null;
   created_at: string;
@@ -24,16 +26,17 @@ export interface SubnodeListItem {
   updated_by: string;
 }
 
-export interface SubnodeDetail {
+export interface SubnodesListResponse {
+  total: number;
+  published: number;
+  draft: number;
+  results: SubnodeListItem[];
+}
+
+export interface ParameterValue {
   id: string;
-  name: string;
-  description: string;
-  node: string;
-  active_version: number | null;
-  original_version: number;
-  created_at: string;
-  created_by: string;
-  versions: SubnodeVersion[];
+  parameter_key: string;
+  value: string;
 }
 
 export interface SubnodeVersion {
@@ -47,19 +50,58 @@ export interface SubnodeVersion {
   parameter_values: ParameterValue[];
 }
 
+export interface SubnodeParameterValuesByVersion {
+  node_version: number;
+  parameter_values: Array<{
+    parameter_key: string;
+    value: string;
+    default_value: string;
+    datatype: string;
+    source: string;
+  }>;
+}
+
+export interface SubnodeVersionWithParametersByNodeVersion extends SubnodeVersion {
+  parameter_values_by_nodeversion?: SubnodeParameterValuesByVersion[];
+}
+
+export interface SubnodeDetail {
+  id: string;
+  name: string;
+  description: string;
+  node?: string;
+  node_family: {
+    id: string;
+    name: string;
+  };
+  active_version: number | null;
+  published: boolean;
+  published_version?: SubnodeVersionWithParametersByNodeVersion;
+  last_version?: SubnodeVersionWithParametersByNodeVersion;
+  original_version: number;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  updated_by: string;
+  versions: SubnodeVersionWithParametersByNodeVersion[];
+}
+
+export interface CreateSubnodeResponse {
+  name: string;
+  description: string;
+  node_family: string;
+  id?: string; // Sometimes included in response
+}
+
 export interface CreateSubnodeRequest {
   name: string;
   description: string;
-  node: string;
+  node_family: string;
 }
 
 export interface ParameterValueRequest {
   id: string;
   value: string;
-}
-
-export interface UpdateParameterValuesRequest {
-  parameter_values: ParameterValueRequest[];
 }
 
 export interface EditWithParametersRequest {
@@ -89,16 +131,10 @@ export interface VersionDetail {
   parameter_values: ParameterValue[];
 }
 
-export interface ParameterValue {
-  id: string;
-  parameter_key: string;
-  value: string;
-}
-
 // API Service Functions
 export const subnodeService = {
   // List all subnodes
-  async getAllSubnodes(): Promise<SubnodeListItem[]> {
+  async getAllSubnodes(): Promise<SubnodesListResponse> {
     const response = await axiosInstance.get('subnodes/');
     return response.data;
   },
@@ -122,14 +158,17 @@ export const subnodeService = {
   },
 
   // Create new subnode
-  async createSubnode(data: CreateSubnodeRequest): Promise<SubnodeDetail> {
+  async createSubnode(data: CreateSubnodeRequest): Promise<CreateSubnodeResponse> {
     const response = await axiosInstance.post('subnodes/', data);
     return response.data;
   },
 
   // Update parameter values
-  async updateParameterValues(id: string, data: UpdateParameterValuesRequest): Promise<any> {
-    const response = await axiosInstance.patch(`subnodes/${id}/update_parameter_values/`, data);
+  async updateParameterValues(id: string, version: number, parameterValues: ParameterValueRequest[]): Promise<any> {
+    const response = await axiosInstance.patch(`subnodes/${id}/update_parameter_values/`, {
+      version,
+      parameter_values: parameterValues
+    });
     return response.data;
   },
 
@@ -164,8 +203,14 @@ export const subnodeService = {
   },
 
   // Import subnode
-  async importSubnode(data: any): Promise<SubnodeDetail> {
-    const response = await axiosInstance.post('subnodes/import/', data);
+  async importSubnode(file: File): Promise<SubnodeDetail> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await axiosInstance.post('subnodes/import/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 
@@ -200,7 +245,7 @@ export const subnodeService = {
       id: versionData.id,
       name: subnode.name,
       description: subnode.description,
-      node: subnode.node,
+      node: subnode.node || subnode.node_family?.id || '',
       version: versionData.version,
       version_comment: versionData.version_comment || '',
       is_deployed: versionData.is_deployed,
@@ -212,7 +257,7 @@ export const subnodeService = {
 
 // Custom hook for fetching all subnodes
 export const useSubnodes = () => {
-  const [data, setData] = useState<SubnodeListItem[]>([]);
+  const [data, setData] = useState<SubnodesListResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 

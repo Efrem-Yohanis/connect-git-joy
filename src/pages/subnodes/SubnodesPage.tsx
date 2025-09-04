@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Upload, Download, Settings, Trash2, Eye, Grid2X2, List, Copy, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import {
   Table,
   TableBody,
@@ -21,22 +23,33 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useSubnodes, subnodeService } from "@/services/subnodeService";
 import { toast } from "sonner";
+import { useSection } from "@/contexts/SectionContext";
+import { LoadingCard } from "@/components/ui/loading";
 
 export function SubnodesPage() {
-  const { data: subnodes, loading, error, refetch } = useSubnodes();
+  const { data: subnodesData, loading, error, refetch } = useSubnodes();
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const navigate = useNavigate();
+  const { setStatusCounts } = useSection();
+
+  // Update stats when data changes
+  useEffect(() => {
+    if (subnodesData) {
+      setStatusCounts({
+        total: subnodesData.total,
+        deployed: subnodesData.published,
+        drafted: subnodesData.draft
+      });
+    }
+  }, [subnodesData, setStatusCounts]);
+
+  const subnodes = subnodesData?.results || [];
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading subnodes...</p>
-        </div>
-      </div>
-    );
+    return <LoadingCard text="Loading subnodes..." className="min-h-[400px]" />;
   }
 
   if (error) {
@@ -52,8 +65,12 @@ export function SubnodesPage() {
 
   const filteredSubnodes = subnodes.filter(subnode =>
     subnode.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    subnode.node.toLowerCase().includes(searchTerm.toLowerCase())
+    (subnode.node_family_name && subnode.node_family_name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const totalPages = Math.ceil(filteredSubnodes.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedSubnodes = filteredSubnodes.slice(startIndex, startIndex + pageSize);
 
   const getDeploymentBadge = (activeVersion: number | null) => {
     return activeVersion 
@@ -82,9 +99,15 @@ export function SubnodesPage() {
     link.click();
   };
 
-  const handleClone = (subnode: any) => {
-    // For now, just redirect to create page - clone functionality would need backend support
-    navigate(`/subnodes/create`);
+  const handleClone = async (subnode: any) => {
+    try {
+      await subnodeService.cloneSubnode(subnode.id, { name: `${subnode.name}_clone` });
+      toast.success("Subnode cloned successfully");
+      refetch();
+    } catch (error) {
+      toast.error("Failed to clone subnode");
+      console.error("Clone error:", error);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -95,10 +118,30 @@ export function SubnodesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
+          <Select
+            value={pageSize.toString()}
+            onValueChange={(value) => {
+              setPageSize(Number(value));
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[100px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="15">15</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+            </SelectContent>
+          </Select>
           <Input
             placeholder="Search subnodes..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
             className="max-w-sm"
           />
         </div>
@@ -122,19 +165,15 @@ export function SubnodesPage() {
               <List className="h-4 w-4" />
             </Button>
           </div>
-          <Button variant="outline" size="sm">
-            <Upload className="h-4 w-4" />
-          </Button>
-          <Button onClick={() => navigate("/subnodes/create")}>
-            <Plus className="h-4 w-4 mr-2" />
-            NEW
-          </Button>
+          <div className="text-sm text-muted-foreground">
+            Read-only view - Use DevTool for management operations
+          </div>
         </div>
       </div>
 
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredSubnodes.map((subnode) => (
+          {paginatedSubnodes.map((subnode) => (
             <Card key={subnode.id} className="bg-card border-border">
               <CardHeader className="pb-2">
                 <CardTitle className="text-foreground text-sm flex items-center justify-between">
@@ -150,8 +189,8 @@ export function SubnodesPage() {
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-1 gap-2 text-xs">
                   <div className="text-muted-foreground">
-                    <span className="font-medium">Node ID:</span>
-                    <Badge variant="outline" className="ml-2">{subnode.node}</Badge>
+                    <span className="font-medium">Node Family:</span>
+                    <Badge variant="outline" className="ml-2">{subnode.node_family_name || subnode.node_family}</Badge>
                   </div>
                   <div className="text-muted-foreground">
                     <span className="font-medium">Active Version:</span> 
@@ -161,10 +200,10 @@ export function SubnodesPage() {
                 
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="text-muted-foreground">
-                    <span className="font-medium">Created:</span> {formatDate(subnode.created_at)}
+                    <span className="font-medium">Last Updated By:</span> {subnode.updated_by || 'Unknown'}
                   </div>
                   <div className="text-muted-foreground">
-                    <span className="font-medium">Updated:</span> {formatDate(subnode.updated_at)}
+                    <span className="font-medium">Last Updated At:</span> {formatDate(subnode.updated_at)}
                   </div>
                 </div>
                 
@@ -181,21 +220,6 @@ export function SubnodesPage() {
                         <Eye className="h-4 w-4 mr-2" />
                         View
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleExport(subnode)}>
-                        <Download className="h-4 w-4 mr-2" />
-                        Export
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleClone(subnode)}>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Clone
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => handleDelete(subnode.id)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -209,20 +233,20 @@ export function SubnodesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>SubNode Name</TableHead>
-                <TableHead>Node ID</TableHead>
+                <TableHead>Node Family</TableHead>
                 <TableHead>Version</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Created Date</TableHead>
-                <TableHead>Updated Date</TableHead>
+                <TableHead>Last Updated By</TableHead>
+                <TableHead>Last Updated At</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSubnodes.map((subnode) => (
+              {paginatedSubnodes.map((subnode) => (
                 <TableRow key={subnode.id}>
                   <TableCell className="font-medium">{subnode.name}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">{subnode.node}</Badge>
+                    <Badge variant="outline">{subnode.node_family_name || subnode.node_family}</Badge>
                   </TableCell>
                   <TableCell className="text-sm">{subnode.active_version || 'None'}</TableCell>
                   <TableCell>
@@ -233,7 +257,7 @@ export function SubnodesPage() {
                       {subnode.active_version ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>
-                  <TableCell>{formatDate(subnode.created_at)}</TableCell>
+                  <TableCell>{subnode.updated_by || 'Unknown'}</TableCell>
                   <TableCell>{formatDate(subnode.updated_at)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end space-x-2">
@@ -244,33 +268,58 @@ export function SubnodesPage() {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleExport(subnode)}
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleClone(subnode)}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleDelete(subnode.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+        </div>
+      )}
+
+      {filteredSubnodes.length > 0 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing {startIndex + 1} to {Math.min(startIndex + pageSize, filteredSubnodes.length)} of {filteredSubnodes.length} subnodes
+          </div>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (currentPage > 1) setCurrentPage(currentPage - 1);
+                  }}
+                  className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <PaginationItem key={page}>
+                  <PaginationLink
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setCurrentPage(page);
+                    }}
+                    isActive={currentPage === page}
+                  >
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                  }}
+                  className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       )}
     </div>

@@ -16,6 +16,7 @@ import {
 import { ArrowLeft, Save } from "lucide-react";
 import { toast } from "sonner";
 import { subnodeService, VersionDetail, ParameterValue } from "@/services/subnodeService";
+import { LoadingCard } from "@/components/ui/loading";
 
 export function EditVersionPage() {
   const { id } = useParams();
@@ -73,14 +74,14 @@ export function EditVersionPage() {
     
     setSaving(true);
     try {
-      const updateData = {
-        parameter_values: parameterValues.map(pv => ({
+      await subnodeService.updateParameterValues(
+        versionDetail.id, 
+        versionDetail.version,
+        parameterValues.map(pv => ({
           id: pv.id,
           value: pv.value
         }))
-      };
-      
-      await subnodeService.updateParameterValues(versionDetail.id, updateData);
+      );
       toast.success("Parameter values updated successfully");
       navigate(`/subnodes/${id}?version=${versionDetail.version}`);
     } catch (error) {
@@ -96,14 +97,7 @@ export function EditVersionPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading version details...</p>
-        </div>
-      </div>
-    );
+    return <LoadingCard text="Loading version details..." className="min-h-[400px]" />;
   }
 
   if (!versionDetail) {

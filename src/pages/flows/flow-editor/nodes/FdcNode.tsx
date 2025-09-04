@@ -42,7 +42,7 @@ export const FdcNode = memo(({ data, selected }: FdcNodeProps) => {
         
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs">
-            FDC
+            {data.label}
           </Badge>
           {data.subnodes && (
             <Badge variant="secondary" className="text-xs">

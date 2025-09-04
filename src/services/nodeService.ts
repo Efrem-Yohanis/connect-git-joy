@@ -53,14 +53,34 @@ export interface Subnode {
   last_updated_at: string;
 }
 
-export interface NodeVersion {
+export interface NodeVersionDetail {
   id: string;
   version: number;
-  is_deployed: boolean;
-  is_editable: boolean;
-  script: string;
-  updated_at: string;
-  version_comment: string | null;
+  state: string;
+  changelog: string;
+  family: string;
+  family_name: string;
+  script_url: string;
+  parameters: Array<{
+    id: string;
+    parameter_id: string;
+    key: string;
+    value: string;
+    datatype: string;
+  }>;
+  subnodes: Array<{
+    id: string;
+    name: string;
+    active_version: number;
+    parameter_values: Record<string, string>;
+  }>;
+  created_at: string;
+  created_by: string;
+}
+
+export interface NodeVersion {
+  version: number;
+  is_deployed?: boolean;
   parameters: NodeParameter[];
   subnodes: Subnode[];
 }
@@ -69,25 +89,37 @@ export interface Node {
   id: string;
   name: string;
   description: string;
-  script: string;
-  version: number;
-  version_comment: string | null;
-  versions: NodeVersion[];
-  total_versions: number;
-  active_version: number | null;
-  original_version: number;
   created_at: string;
   updated_at: string;
-  last_updated_by: string | null;
-  last_updated_at: string;
+  created_by: string;
+  is_deployed: boolean;
+  active_version?: number | null;
+  total_versions?: number;
   published_version?: {
     id: string;
     version: number;
     state: string;
+    changelog: string;
+    family: string;
+    family_name: string;
     script_url: string;
-    parameters: any[];
-    subnodes: any[];
+    parameters: Array<{
+      id: string;
+      parameter_id: string;
+      key: string;
+      value: string;
+      datatype: string;
+    }>;
+    subnodes: Array<{
+      id: string;
+      name: string;
+      active_version: number;
+      parameter_values: Record<string, string>;
+    }>;
+    created_at: string;
+    created_by: string;
   };
+  versions: NodeVersion[];
 }
 
 // API Service Functions
@@ -98,7 +130,8 @@ export const nodeService = {
     try {
       const response = await axiosInstance.get('node-families/');
       console.log('✅ Nodes fetched successfully:', response.data);
-      return response.data;
+      // Return the results array if API returns object with results, otherwise return data directly
+      return Array.isArray(response.data) ? response.data : (response.data.results || []);
     } catch (error) {
       console.error('❌ Error fetching nodes:', error);
       throw error;
@@ -141,20 +174,28 @@ export const nodeService = {
     return response.data;
   },
 
-  // Get node versions
-  async getNodeVersions(id: string): Promise<NodeVersion[]> {
-    const response = await axiosInstance.get(`node-families/${id}/versions/`);
+  // Get node versions list
+  async getNodeVersions(id: string): Promise<NodeVersionDetail[]> {
+    const response = await axiosInstance.get(`node-families/${id}/versions/`, {
+      data: {
+        paramerty_ids: []
+      }
+    });
     return response.data;
   },
 
-  // Get specific node version
-  async getNodeVersion(id: string, version: number): Promise<NodeVersion> {
-    const response = await axiosInstance.get(`node-families/${id}/versions/${version}/`);
+  // Get specific node version detail
+  async getNodeVersionDetail(id: string, version: number): Promise<NodeVersionDetail> {
+    const response = await axiosInstance.get(`node-families/${id}/versions/${version}/`, {
+      data: {
+        paramerty_ids: []
+      }
+    });
     return response.data;
   },
 
-  // Create a new version
-  async createNodeVersion(id: string, fromVersion: number): Promise<NodeVersion> {
+  // Create a new version (legacy - for compatibility)
+  async createNewNodeVersion(id: string, fromVersion: number): Promise<NodeVersion> {
     const response = await axiosInstance.post(`node-families/${id}/versions/`, { from_version: fromVersion });
     return response.data;
   },
@@ -178,7 +219,47 @@ export const nodeService = {
     }
   },
 
-  // Create node
+  // Create node family
+  async createNodeFamily(data: { name: string; description: string; created_by: string }): Promise<Node> {
+    const response = await axiosInstance.post('node-families/', data);
+    return response.data;
+  },
+
+  // Create initial version
+  async createNodeVersion(id: string, data: { version: number; changelog: string }): Promise<any> {
+    const response = await axiosInstance.post(`node-families/${id}/versions/`, data);
+    return response.data;
+  },
+
+  // Upload script for version
+  async uploadVersionScript(id: string, version: number, scriptFile: File): Promise<any> {
+    const formData = new FormData();
+    formData.append('script', scriptFile);
+    
+    const response = await axiosInstance.patch(`node-families/${id}/versions/${version}/script/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  // Create node version with changelog
+  async createNodeVersionWithChangelog(id: string, changelog: string): Promise<any> {
+    // Get the latest version number first
+    const versions = await this.getNodeVersions(id);
+    const latestVersion = Math.max(...versions.map(v => v.version));
+    const newVersion = latestVersion + 1;
+    
+    const response = await axiosInstance.post(`node-families/${id}/versions/`, {
+      version: newVersion,
+      changelog: changelog,
+      source_version: null
+    });
+    return response.data;
+  },
+
+  // Create node (legacy - keeping for compatibility)
   async createNode(data: Partial<Node>): Promise<Node> {
     const response = await axiosInstance.post('node-families/', data);
     return response.data;
@@ -188,5 +269,123 @@ export const nodeService = {
   async addParametersToNode(id: string, parameters: any[]): Promise<any> {
     const response = await axiosInstance.post(`node-families/${id}/versions/${1}/add_parameter/`, { parameters });
     return response.data;
+  },
+
+  // Get specific node version for editing
+  async getNodeVersion(id: string, version: number): Promise<NodeVersionDetail> {
+    const response = await axiosInstance.get(`node-families/${id}/versions/${version}/`, {
+      data: {
+        paramerty_ids: []
+      }
+    });
+    return response.data;
+  },
+
+  // Add parameters to version
+  async addParametersToVersion(nodeId: string, version: number, parameterIds: string[]): Promise<any> {
+    const response = await axiosInstance.post(`node-families/${nodeId}/versions/${version}/add_parameter/`, {
+      parameter_ids: parameterIds
+    });
+    return response.data;
+  },
+
+  // Remove parameters from version
+  async removeParametersFromVersion(nodeId: string, version: number, parameterIds: string[]): Promise<any> {
+    const response = await axiosInstance.post(`node-families/${nodeId}/versions/${version}/remove_parameter/`, {
+      parameter_ids: parameterIds
+    });
+    return response.data;
+  },
+
+  // Start execution - Updated API
+  async startExecution(familyId: string, version: number, subnodeId?: string, parameters?: any): Promise<any> {
+    const payload: any = {
+      family_id: familyId,
+      version: version
+    };
+    
+    if (subnodeId) payload.subnode_id = subnodeId;
+    if (parameters) payload.parameters = parameters;
+    
+    const response = await axiosInstance.post('executions/start/', payload);
+    return response.data;
+  },
+
+  // Stop execution - Updated API
+  async stopExecution(executionId: string): Promise<any> {
+    const response = await axiosInstance.post(`executions/${executionId}/stop/`);
+    return response.data;
+  },
+
+  // Get execution status - New API
+  async getExecutionStatus(executionId: string): Promise<any> {
+    const response = await axiosInstance.get(`executions/${executionId}/status/`);
+    return response.data;
+  },
+
+  // Legacy methods - keeping for backward compatibility but deprecated
+  async executeNode(familyId: string, versionId: string, subnodeId: string): Promise<any> {
+    console.warn('executeNode is deprecated, use startExecution instead');
+    return this.startExecution(familyId, parseInt(versionId), subnodeId);
+  },
+
+  async stopNodeExecution(executionId: string): Promise<any> {
+    console.warn('stopNodeExecution is deprecated, use stopExecution instead');
+    return this.stopExecution(executionId);
+  },
+
+  async getExecutionLogs(executionId: string): Promise<any> {
+    console.warn('getExecutionLogs is deprecated, use getExecutionStatus instead');
+    return this.getExecutionStatus(executionId);
+  },
+
+  // Update script file
+  async updateScript(nodeId: string, version: number, scriptFile: File): Promise<any> {
+    const formData = new FormData();
+    formData.append('script', scriptFile);
+    
+    const response = await axiosInstance.patch(`nodes/${nodeId}/update_script/${version}/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  // Get script content for a specific version
+  async getVersionScript(familyId: string, version: number): Promise<string> {
+    try {
+      // First get the version details to get the script_url
+      const versionDetails = await this.getNodeVersion(familyId, version);
+      
+      if (!versionDetails.script_url) {
+        throw new Error('No script URL available for this version');
+      }
+      
+      console.log('🔍 Attempting to fetch script from:', versionDetails.script_url);
+      
+      // Try to fetch the script content directly from the script_url
+      const response = await fetch(versionDetails.script_url);
+      
+      if (!response.ok) {
+        console.error('❌ Script fetch failed:', response.status, response.statusText);
+        
+        if (response.status === 404) {
+          // If direct access fails, this means the backend URL routing isn't configured
+          // to serve script files. We need to inform the user about this backend issue.
+          throw new Error('Script file not accessible - backend server needs to configure URL routing for script files');
+        }
+        
+        throw new Error(`Failed to fetch script: ${response.status} ${response.statusText}`);
+      }
+      
+      const scriptContent = await response.text();
+      console.log('✅ Script content fetched successfully');
+      return scriptContent;
+      
+    } catch (error) {
+      console.error('❌ Error fetching script content:', error);
+      throw error;
+    }
   }
 };

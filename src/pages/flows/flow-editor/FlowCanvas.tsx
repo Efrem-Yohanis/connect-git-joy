@@ -15,7 +15,9 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { nodeService } from '@/services/nodeService';
+import { flowService } from '@/services/flowService';
 import { toast } from 'sonner';
+import { Loading } from '@/components/ui/loading';
 
 // Import node types
 import { SftpCollectorNode } from './nodes/SftpCollectorNode';
@@ -44,9 +46,10 @@ interface FlowCanvasProps {
   selectedNodeType: string | null;
   onNodeSelect: (node: Node | null) => void;
   selectedNode: Node | null;
+  flowId?: string; // Add flowId for API calls
 }
 
-export function FlowCanvas({ selectedNodeType, onNodeSelect, selectedNode }: FlowCanvasProps) {
+export function FlowCanvas({ selectedNodeType, onNodeSelect, selectedNode, flowId }: FlowCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [loading, setLoading] = useState(true);
@@ -80,8 +83,8 @@ export function FlowCanvas({ selectedNodeType, onNodeSelect, selectedNode }: Flo
               label: apiNode.name,
               description: apiNode.description,
               nodeId: apiNode.id,
-              active_version: apiNode.active_version,
-              total_versions: apiNode.total_versions,
+              active_version: apiNode.active_version || null,
+              total_versions: apiNode.total_versions || apiNode.versions.length,
               subnodes: activeVersionData?.subnodes || [],
               parameters: activeVersionData?.parameters || [],
               deployed: activeVersionData?.is_deployed || false,
@@ -103,8 +106,9 @@ export function FlowCanvas({ selectedNodeType, onNodeSelect, selectedNode }: Flo
   }, [setNodes]);
 
   // Helper function to determine node type based on name or other criteria
-  const determineNodeType = (nodeName: string): string => {
-    const name = nodeName.toLowerCase();
+  const determineNodeType = (nodeName?: string): string => {
+    const name = (nodeName ?? '').toLowerCase();
+    if (!name) return 'sftp_collector'; // default fallback when name is missing
     if (name.includes('sftp') || name.includes('collector')) return 'sftp_collector';
     if (name.includes('fdc')) return 'fdc';
     if (name.includes('asn1') || name.includes('decoder')) return 'asn1_decoder';
@@ -118,11 +122,40 @@ export function FlowCanvas({ selectedNodeType, onNodeSelect, selectedNode }: Flo
   };
 
   const onConnect = useCallback(
-    (params: Connection) => {
+    async (params: Connection) => {
       console.log('🔗 Connecting nodes:', params);
+      
+      // Optimistically update UI first
       setEdges((eds) => addEdge(params, eds));
+      
+      // Make real-time API calls if flowId is provided
+      if (flowId && params.source && params.target) {
+        try {
+          // 1. Create the edge connection
+          await flowService.createFlowEdge({
+            flow: flowId,
+            from_node: params.source,
+            to_node: params.target,
+            condition: ''
+          });
+          
+          // 2. Update the target node's from_node_id field
+          await flowService.updateFlowNodeConnection(params.target, params.source);
+          
+          console.log('✅ Connection created successfully via API');
+          toast.success('Nodes connected successfully');
+        } catch (error) {
+          console.error('❌ Error creating connection:', error);
+          toast.error('Failed to create connection');
+          
+          // Revert optimistic update on error
+          setEdges((eds) => eds.filter(edge => 
+            !(edge.source === params.source && edge.target === params.target)
+          ));
+        }
+      }
     },
-    [setEdges],
+    [setEdges, flowId],
   );
 
   const onNodeClick = useCallback(
@@ -137,13 +170,47 @@ export function FlowCanvas({ selectedNodeType, onNodeSelect, selectedNode }: Flo
     onNodeSelect(null);
   }, [onNodeSelect]);
 
+  // Handle edge deletion
+  const onEdgesDelete = useCallback(
+    async (edgesToDelete: Edge[]) => {
+      console.log('🗑️ Deleting edges:', edgesToDelete);
+      
+      // Optimistically update UI first
+      setEdges((eds) => eds.filter(edge => 
+        !edgesToDelete.some(delEdge => delEdge.id === edge.id)
+      ));
+      
+      // Make real-time API calls if flowId is provided
+      if (flowId) {
+        try {
+          for (const edge of edgesToDelete) {
+            // 1. Delete the edge
+            await flowService.deleteFlowEdge(edge.id);
+            
+            // 2. Clear from_node_id on the target node
+            if (edge.target) {
+              await flowService.updateFlowNodeConnection(edge.target, null);
+            }
+          }
+          
+          console.log('✅ Edges deleted successfully via API');
+          toast.success('Connections removed successfully');
+        } catch (error) {
+          console.error('❌ Error deleting edges:', error);
+          toast.error('Failed to remove connections');
+          
+          // Revert optimistic update on error
+          setEdges((eds) => [...eds, ...edgesToDelete]);
+        }
+      }
+    },
+    [setEdges, flowId],
+  );
+
   if (loading) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading nodes from API...</p>
-        </div>
+        <Loading text="Loading nodes from API..." />
       </div>
     );
   }
@@ -158,6 +225,7 @@ export function FlowCanvas({ selectedNodeType, onNodeSelect, selectedNode }: Flo
         onConnect={onConnect}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
+        onEdgesDelete={onEdgesDelete}
         nodeTypes={nodeTypes}
         className="bg-background"
         fitView

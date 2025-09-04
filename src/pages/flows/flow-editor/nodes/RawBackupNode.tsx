@@ -25,7 +25,7 @@ export const RawBackupNode = memo(({ data, selected }: RawBackupNodeProps) => {
       <Handle 
         type="target" 
         position={Position.Left} 
-        className="!bg-edge-default !border-edge-default !w-3 !h-3" 
+        className="!bg-primary !border-background !w-3 !h-3" 
       />
       
       <div className="space-y-3">
@@ -42,7 +42,7 @@ export const RawBackupNode = memo(({ data, selected }: RawBackupNodeProps) => {
         
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs">
-            Raw Backup
+            {data.label}
           </Badge>
           {data.subnodes && (
             <Badge variant="secondary" className="text-xs">

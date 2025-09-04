@@ -25,7 +25,7 @@ export const EncoderNode = memo(({ data, selected }: EncoderNodeProps) => {
       <Handle 
         type="target" 
         position={Position.Left} 
-        className="!bg-edge-default !border-edge-default !w-3 !h-3" 
+        className="!bg-primary !border-background !w-3 !h-3" 
       />
       
       <div className="space-y-3">
@@ -42,7 +42,7 @@ export const EncoderNode = memo(({ data, selected }: EncoderNodeProps) => {
         
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs">
-            Encoder
+            {data.label}
           </Badge>
           {data.subnodes && (
             <Badge variant="secondary" className="text-xs">
@@ -55,7 +55,7 @@ export const EncoderNode = memo(({ data, selected }: EncoderNodeProps) => {
       <Handle 
         type="source" 
         position={Position.Right} 
-        className="!bg-edge-default !border-edge-default !w-3 !h-3" 
+        className="!bg-primary !border-background !w-3 !h-3" 
       />
     </div>
   );

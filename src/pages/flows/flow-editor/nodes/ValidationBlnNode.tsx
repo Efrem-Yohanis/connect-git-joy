@@ -25,7 +25,7 @@ export const ValidationBlnNode = memo(({ data, selected }: ValidationBlnNodeProp
       <Handle 
         type="target" 
         position={Position.Left} 
-        className="!bg-edge-default !border-edge-default !w-3 !h-3" 
+        className="!bg-primary !border-background !w-3 !h-3" 
       />
       
       <div className="space-y-3">
@@ -42,7 +42,7 @@ export const ValidationBlnNode = memo(({ data, selected }: ValidationBlnNodeProp
         
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs">
-            Validation BLN
+            {data.label}
           </Badge>
           {data.subnodes && (
             <Badge variant="secondary" className="text-xs">
@@ -56,14 +56,14 @@ export const ValidationBlnNode = memo(({ data, selected }: ValidationBlnNodeProp
         type="source" 
         position={Position.Right} 
         id="valid"
-        className="!bg-edge-default !border-edge-default !w-3 !h-3" 
+        className="!bg-primary !border-background !w-3 !h-3" 
         style={{ top: '50%' }}
       />
       <Handle 
         type="source" 
         position={Position.Right} 
         id="invalid"
-        className="!bg-edge-default !border-edge-default !w-3 !h-3" 
+        className="!bg-primary !border-background !w-3 !h-3" 
         style={{ top: '70%' }}
       />
     </div>

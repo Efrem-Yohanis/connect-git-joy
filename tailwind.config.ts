@@ -97,6 +97,11 @@ export default {
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
 			},
+			boxShadow: {
+				'node': 'var(--shadow-node)',
+				'elegant': 'var(--shadow-elegant)',
+				'canvas': 'var(--shadow-canvas)'
+			},
 			keyframes: {
 				'accordion-down': {
 					from: {

@@ -6,43 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Trash2, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { nodeService } from "@/services/nodeService";
-import { useParameters } from "@/services/parameterService";
 
 export function CreateNodePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { data: availableParameters, loading: parametersLoading } = useParameters();
   
   const [nodeName, setNodeName] = useState("");
   const [nodeDescription, setNodeDescription] = useState("");
   const [scriptFile, setScriptFile] = useState<File | null>(null);
-  const [selectedParameterIds, setSelectedParameterIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [parameterComboOpen, setParameterComboOpen] = useState(false);
-
-  const availableParametersForSelection = availableParameters.filter(param =>
-    !selectedParameterIds.includes(param.id)
-  );
-
-  const selectedParameters = availableParameters.filter(param => 
-    selectedParameterIds.includes(param.id)
-  );
-
-  const addParameter = (parameterId: string) => {
-    if (!selectedParameterIds.includes(parameterId)) {
-      setSelectedParameterIds([...selectedParameterIds, parameterId]);
-    }
-  };
-
-  const removeParameter = (parameterId: string) => {
-    setSelectedParameterIds(selectedParameterIds.filter(id => id !== parameterId));
-  };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -61,6 +35,15 @@ export function CreateNodePage() {
       return;
     }
 
+    if (!nodeDescription.trim()) {
+      toast({
+        title: "Error",
+        description: "Description is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!scriptFile) {
       toast({
         title: "Error", 
@@ -72,21 +55,25 @@ export function CreateNodePage() {
 
     setIsLoading(true);
     try {
-      // Create the node first
-      const newNode = await nodeService.createNode({
+      // Step 1: Create Node Family
+      const newNodeFamily = await nodeService.createNodeFamily({
         name: nodeName,
         description: nodeDescription,
-        script: scriptFile?.name || ''
+        created_by: "Efrem"
       });
 
-      // Add parameters if any are selected
-      if (selectedParameterIds.length > 0) {
-        await nodeService.addParametersToNode(newNode.id, selectedParameterIds);
-      }
+      // Step 2: Create Initial Version (v1)
+      await nodeService.createNodeVersion(newNodeFamily.id, {
+        version: 1,
+        changelog: "initial version"
+      });
+
+      // Step 3: Upload Script for v1
+      await nodeService.uploadVersionScript(newNodeFamily.id, 1, scriptFile);
 
       toast({
         title: "Success",
-        description: "Node created successfully"
+        description: "Node created and script uploaded."
       });
       
       navigate("/nodes");
@@ -134,7 +121,7 @@ export function CreateNodePage() {
           </div>
 
           <div>
-            <Label htmlFor="nodeDescription">Description</Label>
+            <Label htmlFor="nodeDescription">Description *</Label>
             <Textarea
               id="nodeDescription"
               value={nodeDescription}
@@ -145,19 +132,15 @@ export function CreateNodePage() {
           </div>
 
           <div>
-            <Label htmlFor="scriptFile">Script File *</Label>
+            <Label htmlFor="scriptFile">Script File * (Python file)</Label>
             <div className="flex items-center gap-2 mt-1">
               <Input
                 id="scriptFile"
                 type="file"
-                accept=".py,.js,.sh,.bat"
+                accept=".py"
                 onChange={handleFileUpload}
                 className="cursor-pointer"
               />
-              <Button size="sm" variant="outline">
-                <Upload className="h-4 w-4 mr-2" />
-                Upload
-              </Button>
             </div>
             {scriptFile && (
               <p className="text-sm text-muted-foreground mt-1">
@@ -168,94 +151,6 @@ export function CreateNodePage() {
         </CardContent>
       </Card>
 
-      {/* Node Parameters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Node Parameters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Parameter Selection */}
-            <div className="space-y-2">
-              <Label>Select Parameter</Label>
-              <Popover open={parameterComboOpen} onOpenChange={setParameterComboOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={parameterComboOpen}
-                    className="w-full justify-between"
-                  >
-                    Select a parameter to add...
-                    <Plus className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0">
-                  <Command>
-                    <CommandInput placeholder="Type to search parameters..." />
-                    <CommandList>
-                      <CommandEmpty>No parameters found.</CommandEmpty>
-                      <CommandGroup>
-                        {parametersLoading ? (
-                          <CommandItem disabled>Loading parameters...</CommandItem>
-                        ) : availableParametersForSelection.length === 0 ? (
-                          <CommandItem disabled>No parameters available</CommandItem>
-                        ) : (
-                          availableParametersForSelection.map((param) => (
-                            <CommandItem
-                              key={param.id}
-                              value={param.key}
-                              onSelect={() => {
-                                addParameter(param.id);
-                                setParameterComboOpen(false);
-                              }}
-                            >
-                              <div className="flex flex-col">
-                                <span className="font-medium">{param.key}</span>
-                                <span className="text-sm text-muted-foreground">
-                                  Default: {param.default_value || 'None'} | {param.required ? 'Required' : 'Optional'}
-                                </span>
-                              </div>
-                            </CommandItem>
-                          ))
-                        )}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Selected Parameters */}
-            {selectedParameters.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">No parameters selected</p>
-            ) : (
-              <div className="space-y-2">
-                <Label>Selected Parameters</Label>
-                <div className="space-y-2">
-                  {selectedParameters.map((param) => (
-                    <div key={param.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1">
-                        <div className="font-medium">{param.key}</div>
-                        <div className="text-sm text-muted-foreground">
-                          Default: {param.default_value || 'None'} | {param.required ? 'Required' : 'Optional'}
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeParameter(param.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Action Buttons */}
       <div className="flex items-center justify-end space-x-4">

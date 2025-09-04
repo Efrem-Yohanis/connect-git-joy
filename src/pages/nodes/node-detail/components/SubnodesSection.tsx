@@ -21,7 +21,7 @@ interface Subnode {
 }
 
 interface SubnodesSectionProps {
-  subnodes: Subnode[];
+  subnodes: any[]; // Updated to handle the new API structure
 }
 
 export function SubnodesSection({ subnodes }: SubnodesSectionProps) {
@@ -49,7 +49,7 @@ export function SubnodesSection({ subnodes }: SubnodesSectionProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {subnodes.map((subnode) => (
+              {subnodes.map((subnode, index) => (
                 <TableRow key={subnode.id} className="cursor-pointer hover:bg-muted/50">
                   <TableCell className="font-medium">{subnode.name}</TableCell>
                   <TableCell>
@@ -59,17 +59,11 @@ export function SubnodesSection({ subnodes }: SubnodesSectionProps) {
                   </TableCell>
                   <TableCell>
                     <Badge variant={subnode.active_version ? "default" : "secondary"}>
-                      {subnode.active_version ? "Active" : "Inactive"}
+                      {subnode.active_version ? "Active" : "Draft"}
                     </Badge>
                   </TableCell>
-                  <TableCell>{subnode.updated_by || "Unknown"}</TableCell>
-                  <TableCell>
-                    {new Date(subnode.updated_at).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    })}
-                  </TableCell>
+                  <TableCell>Unknown</TableCell>
+                  <TableCell>Unknown</TableCell>
                   <TableCell>
                     <Button 
                       size="sm" 

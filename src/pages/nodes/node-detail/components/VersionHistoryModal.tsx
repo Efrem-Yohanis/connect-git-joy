@@ -16,15 +16,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CheckCircle, Clock, User } from "lucide-react";
-import { NodeVersion } from "@/services/nodeService";
+import { NodeVersionDetail } from "@/services/nodeService";
 
 interface VersionHistoryModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  versions: NodeVersion[];
-  selectedVersion: NodeVersion | null;
-  onSelectVersion: (version: NodeVersion) => void;
-  onActivateVersion: (version: NodeVersion) => void;
+  versions: NodeVersionDetail[];
+  selectedVersion: NodeVersionDetail | null;
+  onSelectVersion: (version: NodeVersionDetail) => void;
+  onActivateVersion: (version: NodeVersionDetail) => void;
   isLoading?: boolean;
 }
 
@@ -67,16 +67,16 @@ export function VersionHistoryModal({
                     className={selectedVersion?.id === version.id ? "bg-muted/50" : ""}
                   >
                     <TableCell>
-                      <Badge variant={version.is_deployed ? "default" : "outline"}>
+                      <Badge variant={version.state === 'published' ? "default" : "outline"}>
                         v{version.version}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
-                        {version.is_deployed ? (
+                        {version.state === 'published' ? (
                           <>
                             <CheckCircle className="h-4 w-4 text-green-500" />
-                            <span className="text-green-700 font-medium">Deployed</span>
+                            <span className="text-green-700 font-medium">Published</span>
                           </>
                         ) : (
                           <>
@@ -89,15 +89,15 @@ export function VersionHistoryModal({
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        <span>System</span>
+                        <span>{version.created_by}</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      {new Date(version.updated_at).toLocaleString()}
+                      {new Date(version.created_at).toLocaleString()}
                     </TableCell>
                     <TableCell>
                       <span className="text-sm text-muted-foreground">
-                        {version.version_comment || 'No comment'}
+                        {version.changelog || 'No comment'}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -110,7 +110,7 @@ export function VersionHistoryModal({
                         >
                           {selectedVersion?.id === version.id ? 'Selected' : 'View'}
                         </Button>
-                        {!version.is_deployed && (
+                        {version.state !== 'published' && (
                           <Button 
                             variant="default" 
                             size="sm"

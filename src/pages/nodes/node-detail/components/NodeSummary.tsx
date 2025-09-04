@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Node, NodeVersion } from "@/services/nodeService";
+import { Node, NodeVersionDetail } from "@/services/nodeService";
 
 interface NodeSummaryProps {
   node: Node;
-  selectedVersion: NodeVersion | null;
+  selectedVersion: NodeVersionDetail | null;
   propertiesCount: number;
   subnodesCount: number;
 }
@@ -43,13 +43,13 @@ export function NodeSummary({
           <div className="space-y-4">
             <div>
               <span className="text-sm font-medium text-muted-foreground">Last Updated By</span>
-              <p className="mt-1 text-sm">{node.last_updated_by || "Unknown"}</p>
+              <p className="mt-1 text-sm">{node.created_by || "Unknown"}</p>
             </div>
             
             <div>
               <span className="text-sm font-medium text-muted-foreground">Last Updated Date</span>
               <p className="mt-1 text-sm">
-                {new Date(node.last_updated_at).toLocaleDateString('en-US', {
+                {new Date(node.updated_at).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',

@@ -13,19 +13,6 @@ interface SubnodeInfoProps {
 
 export function SubnodeInfo({ subnode, selectedVersion }: SubnodeInfoProps) {
   const navigate = useNavigate();
-  const [nodeData, setNodeData] = useState<any>(null);
-
-  useEffect(() => {
-    const fetchNode = async () => {
-      try {
-        const data = await nodeService.getNode(subnode.node);
-        setNodeData(data);
-      } catch (err) {
-        console.error('Failed to fetch node:', err);
-      }
-    };
-    fetchNode();
-  }, [subnode.node]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
@@ -43,13 +30,13 @@ export function SubnodeInfo({ subnode, selectedVersion }: SubnodeInfoProps) {
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div>
-            <h4 className="font-semibold text-sm text-muted-foreground mb-1">Node Name</h4>
+            <h4 className="font-semibold text-sm text-muted-foreground mb-1">Node Family Name</h4>
             <div className="flex items-center space-x-2">
-              <p className="font-medium">{nodeData?.name || subnode.node}</p>
+              <p className="font-medium">{subnode.node_family.name}</p>
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => navigate(`/nodes/${subnode.node}`)}
+                onClick={() => navigate(`/nodes/${subnode.node_family.id}`)}
               >
                 <ExternalLink className="h-3 w-3" />
               </Button>
@@ -73,12 +60,12 @@ export function SubnodeInfo({ subnode, selectedVersion }: SubnodeInfoProps) {
           
           <div>
             <h4 className="font-semibold text-sm text-muted-foreground mb-1">Last Updated At</h4>
-            <p className="text-sm">{selectedVersion ? formatDateTime(selectedVersion.updated_at) : 'N/A'}</p>
+            <p className="text-sm">{subnode.updated_at ? formatDateTime(subnode.updated_at) : 'N/A'}</p>
           </div>
           
           <div>
             <h4 className="font-semibold text-sm text-muted-foreground mb-1">Last Updated By</h4>
-            <p className="text-sm">{selectedVersion?.updated_by || 'Unknown'}</p>
+            <p className="text-sm">{subnode.updated_by || 'Unknown'}</p>
           </div>
         </div>
       </CardContent>

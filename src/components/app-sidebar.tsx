@@ -4,10 +4,18 @@ import {
   GitFork, 
   Settings, 
   GitCommitHorizontal,
-  Home
+  Home,
+  AlertTriangle,
+  FileText,
+  Bell,
+  BarChart3,
+  Wrench,
+  Server,
+  ChevronRight
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useSection } from "@/contexts/SectionContext";
+import { useState } from "react";
 
 import {
   Sidebar,
@@ -19,14 +27,47 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const items = [
+const configurationItems = [
   { title: "Flows", url: "/flows", icon: Workflow },
   { title: "Nodes", url: "/nodes", icon: Network },
   { title: "Subnodes", url: "/subnodes", icon: GitFork },
   { title: "Parameters", url: "/parameters", icon: Settings },
+];
+
+const alertItems = [
+  { title: "Flow Alert", url: "/alerts/flows", icon: AlertTriangle },
+  { title: "Node Alert", url: "/alerts/nodes", icon: Bell },
+];
+
+const reportItems = [
+  { title: "Flow Report", url: "/reports/flows", icon: FileText },
+  { title: "Node Report", url: "/reports/nodes", icon: BarChart3 },
+];
+
+const devToolItems = [
+  { title: "DevTool", url: "/devtool", icon: Wrench },
+];
+
+const mediationInstances = [
+  { 
+    title: "Charging Gateway Mediation", 
+    icon: Server, 
+    url: "/mediations/charging"
+  },
+  { 
+    title: "Convergent Mediation", 
+    icon: Server, 
+    url: "/mediations/convergent"
+  },
+  { 
+    title: "NCC Mediation", 
+    icon: Server, 
+    url: "/mediations/ncc"
+  }
 ];
 
 export function AppSidebar() {
@@ -71,19 +112,122 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
+        {/* Dashboard */}
         <SidebarGroup>
-          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
-            Navigation
-          </SidebarGroupLabel>
-
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink 
+                    to="/" 
+                    end
+                    className={getNavClasses("/")}
+                    onClick={() => handleSectionClick("Dashboard")}
+                  >
+                    <Home className="h-4 w-4" />
+                    {!collapsed && <span>Dashboard</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        {/* Mediations Group */}
+        <SidebarGroup>
+          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
+            Mediations
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {mediationInstances.map((mediation) => (
+                <SidebarMenuItem key={mediation.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to={mediation.url} 
+                      className={getNavClasses(mediation.url)}
+                      onClick={() => handleSectionClick(mediation.title)}
+                    >
+                      <mediation.icon className="h-4 w-4" />
+                      {!collapsed && <span>{mediation.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        {/* Alert Group */}
+        <SidebarGroup>
+          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
+            Alert
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {alertItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to={item.url} 
-                      end={item.url === "/"}
+                      className={getNavClasses(item.url)}
+                      onClick={() => handleSectionClick(item.title)}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        {/* Report Group */}
+        <SidebarGroup>
+          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
+            Report
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {reportItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to={item.url} 
+                      className={getNavClasses(item.url)}
+                      onClick={() => handleSectionClick(item.title)}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        {/* Development Tools Group */}
+        <SidebarGroup>
+          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
+            Development
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {devToolItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to={item.url} 
                       className={getNavClasses(item.url)}
                       onClick={() => handleSectionClick(item.title)}
                     >
