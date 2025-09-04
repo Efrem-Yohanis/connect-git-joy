@@ -31,8 +31,8 @@ export function ChargingMediationPage() {
 
   return (
     <MediationLayout
-      title="Charging Gateway Intelligence"
-      description="Advanced charging gateway mediation platform with real-time billing event processing, intelligent error handling, and comprehensive operational analytics for enterprise telecommunications infrastructure."
+      title="Charging Gateway"
+      description=""
       totalFlows={chargingFlows.length}
       runningFlows={runningFlows}
       stoppedFlows={stoppedFlows}

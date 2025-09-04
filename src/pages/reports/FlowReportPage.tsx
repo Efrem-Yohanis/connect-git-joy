@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, TrendingUp, TrendingDown, Activity, BarChart3, Clock, CheckCircle, XCircle, Filter, Calendar, Download } from "lucide-react";
+import { FileText, TrendingUp, TrendingDown, Activity, BarChart3, Clock, CheckCircle, XCircle, Filter, Calendar, Download, Shield, LineChart } from "lucide-react";
 
 export function FlowReportPage() {
   const summaryMetrics = {
@@ -98,24 +98,32 @@ export function FlowReportPage() {
   };
 
   return (
-    <main className="container mx-auto p-6 space-y-6">
-      {/* Header */}
+    <main className="container mx-auto p-6 space-y-8">
+      {/* Enhanced Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <BarChart3 className="h-8 w-8 text-primary" />
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-primary/10 rounded-lg">
+            <LineChart className="h-8 w-8 text-primary" />
+          </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Flow Reports</h1>
-            <p className="text-muted-foreground">Comprehensive flow execution analytics and performance metrics</p>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              Flow Performance Analytics
+            </h1>
+            <p className="text-muted-foreground text-lg">Enterprise-grade flow execution analytics and comprehensive performance insights</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export Report
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="sm" className="shadow-sm">
+            <Calendar className="h-4 w-4 mr-2" />
+            Schedule Report
           </Button>
-          <Button variant="outline" size="sm">
-            <Filter className="h-4 w-4 mr-2" />
-            Advanced Filters
+          <Button variant="outline" size="sm" className="shadow-sm">
+            <Download className="h-4 w-4 mr-2" />
+            Export Analytics
+          </Button>
+          <Button size="sm" className="shadow-lg bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80">
+            <Shield className="h-4 w-4 mr-2" />
+            Advanced Analytics
           </Button>
         </div>
       </div>

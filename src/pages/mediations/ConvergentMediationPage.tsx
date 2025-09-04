@@ -31,8 +31,8 @@ export function ConvergentMediationPage() {
 
   return (
     <MediationLayout
-      title="Convergent Billing Excellence"
-      description="Unified convergent billing mediation ecosystem with advanced stream processing, intelligent data transformation, and enterprise-grade operational monitoring for telecommunications service providers."
+      title="Convergent Billing"
+      description=""
       totalFlows={convergentFlows.length}
       runningFlows={runningFlows}
       stoppedFlows={stoppedFlows}

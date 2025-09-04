@@ -32,7 +32,7 @@ export function NCCMediationPage() {
   return (
     <MediationLayout
       title="Network Call Control"
-      description="Enterprise-grade network call control mediation platform for monitoring and managing real-time telecommunication flow processing with advanced analytics and operational intelligence."
+      description=""
       totalFlows={nccFlows.length}
       runningFlows={runningFlows}
       stoppedFlows={stoppedFlows}
