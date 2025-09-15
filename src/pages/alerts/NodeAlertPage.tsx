@@ -110,7 +110,7 @@ export function NodeAlertPage() {
   const totalAlerts = alerts.length;
 
   return (
-    <main className="container mx-auto p-6 space-y-6">
+    <main className="w-full p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

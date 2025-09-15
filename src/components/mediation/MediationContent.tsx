@@ -83,7 +83,7 @@ export function MediationContent({ flows, basePath }: MediationContentProps) {
   return (
     <>
       {/* Enhanced Controls Section */}
-      <div className="bg-card/50 backdrop-blur-xl border border-border/40 rounded-2xl p-8 shadow-elegant">
+      <div className="bg-card/50 backdrop-blur-xl border border-border/40 p-8">
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
             <Select
@@ -130,23 +130,18 @@ export function MediationContent({ flows, basePath }: MediationContentProps) {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="max-w-xs bg-background/70 border-border/60 focus:border-primary/50 focus:bg-background transition-all duration-200"
+              className="w-80 bg-background/70 border-border/60 focus:border-primary/50 focus:bg-background transition-all duration-200"
             />
           </div>
 
           <div className="flex items-center space-x-3">
-            <Button variant="outline" size="sm" className="border-border/60 hover:bg-primary/5">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-            
-            <div className="flex border border-border/60 rounded-xl bg-background/50 backdrop-blur-sm">
+            <div className="flex border border-border/60 bg-background/50 backdrop-blur-sm">
               <Button
                 onClick={() => setViewMode("list")}
                 variant={viewMode === "list" ? "default" : "ghost"}
                 size="sm"
-                className={`rounded-r-none transition-all duration-300 ${
-                  viewMode === "list" ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-primary/10"
+                className={`transition-all duration-300 ${
+                  viewMode === "list" ? "bg-primary text-primary-foreground" : "hover:bg-primary/10"
                 }`}
               >
                 <List className="h-4 w-4" />
@@ -155,8 +150,8 @@ export function MediationContent({ flows, basePath }: MediationContentProps) {
                 onClick={() => setViewMode("grid")}
                 variant={viewMode === "grid" ? "default" : "ghost"}
                 size="sm"
-                className={`rounded-l-none transition-all duration-300 ${
-                  viewMode === "grid" ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-primary/10"
+                className={`transition-all duration-300 ${
+                  viewMode === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-primary/10"
                 }`}
               >
                 <Grid className="h-4 w-4" />
@@ -168,7 +163,7 @@ export function MediationContent({ flows, basePath }: MediationContentProps) {
 
       {/* Content Section */}
       {viewMode === "list" ? (
-        <div className="bg-card/50 backdrop-blur-xl border border-border/40 rounded-2xl shadow-elegant overflow-hidden">
+        <div className="bg-card/50 backdrop-blur-xl border border-border/40 overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="border-border/40 bg-muted/20 hover:bg-muted/20">
@@ -226,7 +221,7 @@ export function MediationContent({ flows, basePath }: MediationContentProps) {
           {paginatedFlows.map((flow, index) => (
             <Card 
               key={flow.id} 
-              className="group bg-card/50 backdrop-blur-xl border-border/40 hover:border-primary/30 shadow-elegant hover:shadow-card transition-all duration-500 hover:-translate-y-2 animate-fade-in overflow-hidden"
+              className="group bg-card/50 backdrop-blur-xl border-border/40 hover:border-primary/30 hover:bg-card/60 transition-all duration-500 animate-fade-in overflow-hidden"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <CardHeader className="pb-4 bg-gradient-to-r from-primary/5 to-transparent">
@@ -242,7 +237,7 @@ export function MediationContent({ flows, basePath }: MediationContentProps) {
                 </div>
                 
                 <div className="grid grid-cols-1 gap-4 text-sm">
-                  <div className="bg-muted/20 rounded-xl p-4 space-y-3">
+                  <div className="bg-muted/20 p-4 space-y-3">
                     <div className="space-y-1">
                       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Last Execution</div>
                       <div className="text-foreground font-medium">{flow.lastRun}</div>
@@ -279,7 +274,7 @@ export function MediationContent({ flows, basePath }: MediationContentProps) {
 
       {/* Enhanced Pagination */}
       {filteredFlows.length > 0 && (
-        <div className="bg-card/50 backdrop-blur-xl border border-border/40 rounded-2xl p-8 shadow-elegant">
+        <div className="bg-card/50 backdrop-blur-xl border border-border/40 p-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm font-medium text-muted-foreground">
               Showing <span className="text-foreground font-bold">{startIndex + 1}</span> to{" "}

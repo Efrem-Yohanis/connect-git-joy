@@ -3,31 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
-  Activity, 
   AlertTriangle, 
   CheckCircle, 
   Clock, 
-  Database, 
-  GitFork, 
-  Network, 
-  Plus, 
-  Settings, 
-  TrendingUp, 
-  Users, 
-  Workflow,
-  Zap,
-  BarChart3,
-  PieChart,
   Monitor,
-  Server,
-  Cpu,
-  HardDrive,
-  MemoryStick,
-  Wifi,
-  Eye,
   RefreshCw,
   Bell,
   ArrowUp,
@@ -35,84 +16,102 @@ import {
   Pause,
   Play,
   Square,
-  Target,
-  Gauge,
-  Timer,
   AlertCircle,
-  Layers,
-  GitBranch
+  FileText,
+  EyeOff,
+  StickyNote,
+  Info,
+  Zap,
+  TrendingUp
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useItems } from './apis/ItemService';
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell, Pie } from 'recharts';
 
-// Global KPI Metrics
-const globalKPIs = [
+// Stream Data - Professional Mediation Dashboard
+const streamsData = [
   {
-    title: "Active Flows",
-    value: "47",
-    total: "52 Total",
-    change: "+3.2%",
-    trend: "up",
-    icon: Workflow,
-    color: "text-primary",
-    bgColor: "bg-primary/10",
-    status: "healthy"
+    id: "stream-001",
+    name: "SFC_ETH_6D_BSS_TO_NOKIA_DWH_STREAM",
+    errors: 22067,
+    warnings: 0,
+    instances: 1,
+    status: "RUNNING",
+    uptime: "14d 8h 23m",
+    lastActivity: "2 seconds ago",
+    throughput: "3.2K/sec"
   },
   {
-    title: "Throughput",
-    value: "12.4K",
-    total: "events/sec",
-    change: "+15.2%",
-    trend: "up",
-    icon: Gauge,
-    color: "text-success",
-    bgColor: "bg-success/10",
-    status: "healthy"
+    id: "stream-002", 
+    name: "SFC_ETH_COLLAB_TO_DWH_STREAM",
+    errors: 0,
+    warnings: 12,
+    instances: 1,
+    status: "STOPPED",
+    uptime: "0h",
+    lastActivity: "45 minutes ago",
+    throughput: "0/sec"
   },
   {
-    title: "Avg Latency", 
-    value: "142ms",
-    total: "end-to-end",
-    change: "-8.1%",
-    trend: "down",
-    icon: Timer,
-    color: "text-info",
-    bgColor: "bg-info/10",
-    status: "optimal"
+    id: "stream-003",
+    name: "BILLING_MEDIATION_CORE_STREAM",
+    errors: 156,
+    warnings: 89,
+    instances: 1,
+    status: "PARTIAL",
+    uptime: "6d 12h 45m",
+    lastActivity: "1 second ago",
+    throughput: "1.8K/sec"
   },
   {
-    title: "Error Rate",
-    value: "0.12%",
-    total: "of events",
-    change: "-2.3%", 
-    trend: "down",
-    icon: AlertTriangle,
-    color: "text-warning",
-    bgColor: "bg-warning/10",
-    status: "warning"
+    id: "stream-004",
+    name: "CDR_PROCESSING_MAIN_STREAM",
+    errors: 8,
+    warnings: 156,
+    instances: 1,
+    status: "RUNNING",
+    uptime: "22d 3h 12m",
+    lastActivity: "1 second ago",
+    throughput: "5.6K/sec"
   },
   {
-    title: "Queue Backlog",
-    value: "2.1K",
-    total: "messages",
-    change: "+5.8%",
-    trend: "up", 
-    icon: Database,
-    color: "text-destructive",
-    bgColor: "bg-destructive/10",
-    status: "alert"
+    id: "stream-005",
+    name: "NETWORK_EVENTS_COLLECTOR_STREAM",
+    errors: 0,
+    warnings: 3,
+    instances: 1,
+    status: "RUNNING",
+    uptime: "8d 15h 32m",
+    lastActivity: "3 seconds ago",
+    throughput: "2.1K/sec"
+  }
+];
+
+// Alerts Summary
+const alertsSummary = {
+  totalErrors: 22088,
+  totalWarnings: 237,
+  totalInfo: 72
+};
+
+// Peak Streams (highest activity)
+const peakStreams = [
+  {
+    name: "CDR_PROCESSING_MAIN_STREAM",
+    throughput: "5.6K/sec",
+    uptime: "22d 3h",
+    errorRate: "0.02%"
   },
   {
-    title: "CPU Usage",
-    value: "67%",
-    total: "cluster avg",
-    change: "+12%",
-    trend: "up",
-    icon: Cpu,
-    color: "text-info",
-    bgColor: "bg-info/10",
-    status: "healthy"
+    name: "SFC_ETH_6D_BSS_TO_NOKIA_DWH_STREAM", 
+    throughput: "3.2K/sec",
+    uptime: "14d 8h",
+    errorRate: "1.2%"
+  },
+  {
+    name: "NETWORK_EVENTS_COLLECTOR_STREAM",
+    throughput: "2.1K/sec", 
+    uptime: "8d 15h",
+    errorRate: "0.01%"
   }
 ];
 
@@ -268,9 +267,7 @@ const COLORS = ['hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--destruc
 
 export function DashboardPage() {
   const navigate = useNavigate();
-  const { data: flows } = useItems();
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [activeTab, setActiveTab] = useState("overview");
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -286,45 +283,29 @@ export function DashboardPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "healthy": return "text-success";
-      case "degraded": return "text-warning";
-      case "failed": return "text-destructive";
-      case "running": return "text-success";
-      case "stopped": return "text-muted-foreground";
+      case "RUNNING": return "text-success";
+      case "PARTIAL": return "text-warning";
+      case "STOPPED": return "text-muted-foreground";
       default: return "text-muted-foreground";
     }
   };
 
-  const getStatusBadge = (status: string, health?: string) => {
-    const displayStatus = health || status;
-    const variant = displayStatus === "healthy" || displayStatus === "running" ? "default" :
-                   displayStatus === "degraded" || displayStatus === "warning" ? "secondary" : 
+  const getStatusBadge = (status: string) => {
+    const variant = status === "RUNNING" ? "default" :
+                   status === "PARTIAL" ? "secondary" : 
                    "destructive";
     
     return (
-      <Badge variant={variant} className="text-xs">
-        {displayStatus}
+      <Badge variant={variant} className="text-xs font-medium">
+        {status}
       </Badge>
     );
-  };
-
-  const getHealthStats = () => {
-    const healthy = flowsData.filter(f => f.health === "healthy").length;
-    const degraded = flowsData.filter(f => f.health === "degraded").length;
-    const failed = flowsData.filter(f => f.health === "failed").length;
-    const total = flowsData.length;
-    
-    return [
-      { name: 'Healthy', value: healthy, color: COLORS[0] },
-      { name: 'Degraded', value: degraded, color: COLORS[1] },
-      { name: 'Failed', value: failed, color: COLORS[2] }
-    ];
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <div className="space-y-6 p-6">
-        {/* Header */}
+        {/* Dashboard Header */}
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary-glow/5 rounded-2xl" />
           <div className="relative bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-card">
@@ -336,15 +317,17 @@ export function DashboardPage() {
                   </div>
                   <div>
                     <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-                      Mediation Control Center
+                      Stream Monitoring Dashboard
                     </h1>
                     <p className="text-sm text-muted-foreground">
-                      Real-time monitoring and control of your data processing flows
+                      Real-time monitoring and control of mediation streams
                     </p>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              
+              {/* Dashboard Controls - Removed as requested */}
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -355,7 +338,7 @@ export function DashboardPage() {
                   <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
                   Refresh
                 </Button>
-                <div className="flex flex-col items-end gap-1">
+                <div className="flex flex-col items-end gap-1 ml-4">
                   <div className="text-xs text-muted-foreground">
                     {currentTime.toLocaleDateString()}
                   </div>
@@ -368,428 +351,212 @@ export function DashboardPage() {
           </div>
         </div>
 
-        {/* Global KPIs */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          {globalKPIs.map((kpi, index) => (
-            <Card 
-              key={kpi.title}
-              className="group bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 shadow-subtle hover:shadow-card transition-all duration-300 animate-fade-in"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className={`p-1.5 rounded-md ${kpi.bgColor}`}>
-                    <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
-                  </div>
-                  <Badge 
-                    variant="outline" 
-                    className={`text-xs ${kpi.trend === 'up' ? 'text-success border-success/30' : 'text-info border-info/30'}`}
-                  >
-                    {kpi.trend === 'up' ? <ArrowUp className="h-3 w-3 mr-1" /> : <ArrowDown className="h-3 w-3 mr-1" />}
-                    {kpi.change}
-                  </Badge>
+        {/* Summary Cards */}
+        <div className="grid gap-4 md:grid-cols-6">
+          <Card className="bg-success/5 border-success/20 shadow-subtle">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-success/10 rounded-lg">
+                  <Play className="h-5 w-5 text-success" />
                 </div>
-                <div className="space-y-1">
-                  <div className="text-xl font-bold text-foreground">
-                    {kpi.value}
+                <div>
+                  <div className="text-2xl font-bold text-success">
+                    {streamsData.filter(stream => stream.status === "RUNNING").length}
                   </div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                    {kpi.title}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {kpi.total}
-                  </div>
+                  <div className="text-sm text-muted-foreground">All Running Streams</div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-destructive/5 border-destructive/20 shadow-subtle">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-destructive/10 rounded-lg">
+                  <Square className="h-5 w-5 text-destructive" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-destructive">
+                    {streamsData.filter(stream => stream.status === "STOPPED").length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">All Stopped Streams</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-primary/5 border-primary/20 shadow-subtle">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Monitor className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-primary">
+                    {streamsData.length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">All Streams</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-destructive/5 border-destructive/20 shadow-subtle">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-destructive/10 rounded-lg">
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-destructive">
+                    22,088
+                  </div>
+                  <div className="text-sm text-muted-foreground">Total Errors</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-warning/5 border-warning/20 shadow-subtle">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-warning/10 rounded-lg">
+                  <AlertCircle className="h-5 w-5 text-warning" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-warning">
+                    237
+                  </div>
+                  <div className="text-sm text-muted-foreground">Total Warnings</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-info/5 border-info/20 shadow-subtle">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-info/10 rounded-lg">
+                  <Info className="h-5 w-5 text-info" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-info">
+                    72
+                  </div>
+                  <div className="text-sm text-muted-foreground">Info Messages</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Main Dashboard Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 bg-card/50 border border-border/50">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Monitor className="h-4 w-4 mr-2" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="flows" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Workflow className="h-4 w-4 mr-2" />
-              Flows
-            </TabsTrigger>
-            <TabsTrigger value="nodes" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Network className="h-4 w-4 mr-2" />
-              Nodes
-            </TabsTrigger>
-            <TabsTrigger value="alerts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Bell className="h-4 w-4 mr-2" />
-              Alerts
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-2 space-y-6">
-                {/* Performance Charts */}
-                <Card className="bg-card/50 backdrop-blur-sm border-border/50 shadow-subtle">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5 text-primary" />
-                      Performance Metrics
-                    </CardTitle>
-                    <CardDescription>Real-time system performance over 24 hours</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={performanceData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                          <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                          <Tooltip 
-                            contentStyle={{
-                              backgroundColor: 'hsl(var(--card))',
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '8px'
-                            }}
-                          />
-                          <Area 
-                            type="monotone" 
-                            dataKey="throughput" 
-                            stroke="hsl(var(--primary))" 
-                            fill="hsl(var(--primary))"
-                            fillOpacity={0.2}
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* System Resources */}
-                <Card className="bg-card/50 backdrop-blur-sm border-border/50 shadow-subtle">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Server className="h-5 w-5 text-primary" />
-                      System Resources
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <Cpu className="h-4 w-4 text-info" />
-                            <span className="text-sm font-medium">CPU Usage</span>
-                          </div>
-                          <span className="text-sm text-muted-foreground">67%</span>
-                        </div>
-                        <Progress value={67} className="h-2" />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <MemoryStick className="h-4 w-4 text-warning" />
-                            <span className="text-sm font-medium">Memory</span>
-                          </div>
-                          <span className="text-sm text-muted-foreground">78%</span>
-                        </div>
-                        <Progress value={78} className="h-2" />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <HardDrive className="h-4 w-4 text-success" />
-                            <span className="text-sm font-medium">Storage</span>
-                          </div>
-                          <span className="text-sm text-muted-foreground">45%</span>
-                        </div>
-                        <Progress value={45} className="h-2" />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <Wifi className="h-4 w-4 text-primary" />
-                            <span className="text-sm font-medium">Network I/O</span>
-                          </div>
-                          <span className="text-sm text-muted-foreground">34%</span>
-                        </div>
-                        <Progress value={34} className="h-2" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="space-y-6">
-                {/* Flow Health Distribution */}
-                <Card className="bg-card/50 backdrop-blur-sm border-border/50 shadow-subtle">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <PieChart className="h-5 w-5 text-primary" />
-                      Flow Health
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-48">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <RechartsPieChart>
-                          <Tooltip />
-                          <Pie
-                            data={getHealthStats()}
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={60}
-                            fill="#8884d8"
-                            dataKey="value"
-                            label={({ name, value }) => `${name}: ${value}`}
-                          >
-                            {getHealthStats().map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                        </RechartsPieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* System Status */}
-                <Card className="bg-card/50 backdrop-blur-sm border-border/50 shadow-subtle">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <CheckCircle className="h-5 w-5 text-success" />
-                      System Status
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4 text-center">
-                      <div className="space-y-1">
-                        <div className="text-xl font-bold text-success">{flowsData.filter(f => f.status === 'running').length}</div>
-                        <div className="text-xs text-muted-foreground">Running</div>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="text-xl font-bold text-muted-foreground">{flowsData.filter(f => f.status === 'stopped').length}</div>
-                        <div className="text-xs text-muted-foreground">Stopped</div>
-                      </div>
-                    </div>
-                    <div className="pt-4 border-t">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
-                          <span className="text-sm">System Operational</span>
-                        </div>
-                        <Badge variant="outline" className="text-success border-success/30">
-                          99.8%
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+        {/* Streams Table */}
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50 shadow-subtle">
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <CardTitle className="text-lg font-semibold">Streams</CardTitle>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex items-center gap-2">
+                  <label htmlFor="status-filter" className="text-sm font-medium text-muted-foreground">
+                    Filter by:
+                  </label>
+                  <select 
+                    id="status-filter"
+                    className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    defaultValue="all"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="RUNNING">Running</option>
+                    <option value="STOPPED">Stopped</option>
+                    <option value="PARTIAL">Partial</option>
+                  </select>
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search flows..."
+                    className="h-9 w-full sm:w-64 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  />
+                </div>
               </div>
             </div>
-          </TabsContent>
-
-          {/* Flows Tab */}
-          <TabsContent value="flows" className="space-y-6">
-            <Card className="bg-card/50 backdrop-blur-sm border-border/50 shadow-subtle">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Workflow className="h-5 w-5 text-primary" />
-                      Flow Management
-                    </CardTitle>
-                    <CardDescription>Monitor and manage data processing flows</CardDescription>
-                  </div>
-                  <Button onClick={() => navigate("/flows")}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Flow
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {flowsData.map((flow) => (
-                    <Card key={flow.id} className="border-border/50 hover:border-primary/30 transition-colors">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2">
-                              <Workflow className={`h-4 w-4 ${getStatusColor(flow.health)}`} />
-                              <span className="font-medium">{flow.name}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {getStatusBadge(flow.status, flow.health)}
-                              <Badge variant="outline" className="text-xs">
-                                {flow.nodes} nodes
-                              </Badge>
-                            </div>
-                          </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-hidden rounded-lg border border-border">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 border-b border-border sticky top-0 z-10">
+                    <tr>
+                      <th className="text-left font-medium text-muted-foreground px-4 py-3">
+                        Stream Name
+                      </th>
+                      <th className="text-left font-medium text-muted-foreground px-4 py-3">
+                        Errors / Warnings  
+                      </th>
+                      <th className="text-left font-medium text-muted-foreground px-4 py-3">
+                        Instances
+                      </th>
+                      <th className="text-left font-medium text-muted-foreground px-4 py-3">
+                        Status
+                      </th>
+                      <th className="text-left font-medium text-muted-foreground px-4 py-3">
+                        Throughput
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {streamsData.slice(0, 10).map((stream) => (
+                      <tr 
+                        key={stream.id}
+                        className="hover:bg-muted/30 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/streams/${stream.id}`)}
+                      >
+                        <td className="px-4 py-3 font-medium text-foreground">
+                          {stream.name}
+                        </td>
+                        <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => navigate(`/flows/${flow.id}`)}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <Settings className="h-4 w-4" />
-                            </Button>
+                            <span className={`font-medium ${stream.errors > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                              {stream.errors.toLocaleString()}
+                            </span>
+                            <span className="text-muted-foreground">/</span>
+                            <span className={`font-medium ${stream.warnings > 0 ? 'text-warning' : 'text-muted-foreground'}`}>
+                              {stream.warnings}
+                            </span>
                           </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                          <div>
-                            <div className="text-muted-foreground">Throughput</div>
-                            <div className="font-medium">{flow.throughput.toLocaleString()} evt/s</div>
-                          </div>
-                          <div>
-                            <div className="text-muted-foreground">Queue Size</div>
-                            <div className="font-medium">{flow.queueSize.toLocaleString()}</div>
-                          </div>
-                          <div>
-                            <div className="text-muted-foreground">Latency</div>
-                            <div className="font-medium">{flow.latency}ms</div>
-                          </div>
-                          <div>
-                            <div className="text-muted-foreground">SLA</div>
-                            <div className="font-medium">{flow.slaCompliance}%</div>
-                          </div>
-                        </div>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {stream.instances}
+                        </td>
+                        <td className="px-4 py-3">
+                          {getStatusBadge(stream.status)}
+                        </td>
+                        <td className="px-4 py-3 font-medium">
+                          {stream.throughput}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/20">
+              <div className="text-sm text-muted-foreground">
+                Showing 1 to {streamsData.length} of {streamsData.length} flows
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" disabled>
+                  Previous
+                </Button>
+                <Button variant="outline" size="sm" disabled>
+                  Next
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-                        {flow.errorCount > 0 && (
-                          <Alert className="mt-3 border-warning/30 bg-warning/5">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertDescription>
-                              {flow.errorCount} errors detected in the last hour
-                            </AlertDescription>
-                          </Alert>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Nodes Tab */}
-          <TabsContent value="nodes" className="space-y-6">
-            <Card className="bg-card/50 backdrop-blur-sm border-border/50 shadow-subtle">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Network className="h-5 w-5 text-primary" />
-                  Node Performance
-                </CardTitle>
-                <CardDescription>Monitor individual processing nodes</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {nodesData.map((node) => (
-                    <Card key={node.id} className="border-border/50">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2">
-                              <Network className={`h-4 w-4 ${getStatusColor(node.status)}`} />
-                              <span className="font-medium">{node.name}</span>
-                            </div>
-                            <Badge variant="outline" className="text-xs">
-                              {node.type}
-                            </Badge>
-                            {getStatusBadge(node.status)}
-                          </div>
-                          <Button variant="ghost" size="sm">
-                            <Settings className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-                          <div>
-                            <div className="text-muted-foreground">Input Rate</div>
-                            <div className="font-medium">{node.inputRate}/s</div>
-                          </div>
-                          <div>
-                            <div className="text-muted-foreground">Output Rate</div>
-                            <div className="font-medium">{node.outputRate}/s</div>
-                          </div>
-                          <div>
-                            <div className="text-muted-foreground">Queue</div>
-                            <div className="font-medium">{node.queueSize}</div>
-                          </div>
-                          <div>
-                            <div className="text-muted-foreground">Latency</div>
-                            <div className="font-medium">{node.latency}ms</div>
-                          </div>
-                          <div>
-                            <div className="text-muted-foreground">Errors</div>
-                            <div className="font-medium">{node.errorCount}</div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Alerts Tab */}
-          <TabsContent value="alerts" className="space-y-6">
-            <Card className="bg-card/50 backdrop-blur-sm border-border/50 shadow-subtle">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5 text-primary" />
-                  System Alerts
-                </CardTitle>
-                <CardDescription>Critical notifications and warnings</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {alertsData.map((alert) => (
-                    <Alert 
-                      key={alert.id} 
-                      className={`${
-                        alert.type === 'critical' ? 'border-destructive/30 bg-destructive/5' :
-                        alert.type === 'warning' ? 'border-warning/30 bg-warning/5' :
-                        'border-info/30 bg-info/5'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3">
-                          {alert.type === 'critical' ? 
-                            <AlertCircle className="h-4 w-4 text-destructive mt-0.5" /> :
-                            alert.type === 'warning' ?
-                            <AlertTriangle className="h-4 w-4 text-warning mt-0.5" /> :
-                            <Bell className="h-4 w-4 text-info mt-0.5" />
-                          }
-                          <div className="space-y-1">
-                            <div className="font-medium">{alert.title}</div>
-                            <AlertDescription className="text-sm">
-                              {alert.description}
-                            </AlertDescription>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <Clock className="h-3 w-3" />
-                              {new Date(alert.timestamp).toLocaleString()}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {!alert.acknowledged && (
-                            <Badge variant="destructive" className="text-xs">
-                              New
-                            </Badge>
-                          )}
-                          <Button variant="outline" size="sm">
-                            Acknowledge
-                          </Button>
-                        </div>
-                      </div>
-                    </Alert>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        {/* Peak Performance Streams section removed as requested */}
       </div>
     </div>
   );

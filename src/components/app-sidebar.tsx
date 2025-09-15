@@ -54,17 +54,17 @@ const devToolItems = [
 
 const mediationInstances = [
   { 
-    title: "Charging Gateway Mediation", 
+    title: "Charging Gateway", 
     icon: Server, 
     url: "/mediations/charging"
   },
   { 
-    title: "Convergent Mediation", 
+    title: "Convergent", 
     icon: Server, 
     url: "/mediations/convergent"
   },
   { 
-    title: "NCC Mediation", 
+    title: "NCC", 
     icon: Server, 
     url: "/mediations/ncc"
   }

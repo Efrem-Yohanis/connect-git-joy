@@ -17,7 +17,7 @@ export const FdcNode = memo(({ data, selected }: FdcNodeProps) => {
   return (
     <div 
       className={`
-        bg-node-background border-2 rounded-lg p-4 min-w-[200px] shadow-node
+        bg-node-background border-2 p-4 min-w-[200px] shadow-node
         ${selected ? 'border-primary' : 'border-node-border'}
         transition-all duration-200
       `}

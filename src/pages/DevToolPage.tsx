@@ -20,10 +20,7 @@ import {
   Database,
   Grid3X3,
   List,
-  Eye,
-  GitCommit,
-  GitBranch,
-  Clock
+  Eye
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -34,11 +31,19 @@ import { CloneFlowDialog } from "@/pages/flows/clone-flow-dialog";
 import { useSubnodes, subnodeService } from "@/services/subnodeService";
 import { parameterService } from "@/services/parameterService";
 import { LoadingCard } from "@/components/ui/loading";
+import { useSection } from "@/contexts/SectionContext";
 import axios from "axios";
 
 export function DevToolPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { setCurrentSection, setStatusCounts } = useSection();
+
+  // Set section context for DevTool page
+  useEffect(() => {
+    setCurrentSection("Development Tools");
+    setStatusCounts({ total: 0, deployed: 0, drafted: 0 }); // Hide status counts
+  }, [setCurrentSection, setStatusCounts]);
   
   // Display limits state
   const [displayLimits, setDisplayLimits] = useState<{[key: string]: number}>({
@@ -65,10 +70,6 @@ export function DevToolPage() {
   // Parameters state
   const [parameters, setParameters] = useState<any[]>([]);
   const [parametersLoading, setParametersLoading] = useState(true);
-
-  // Git state
-  const [gitInfo, setGitInfo] = useState<any>(null);
-  const [gitLoading, setGitLoading] = useState(true);
 
   // Helper functions
   const handleDisplayLimitChange = (category: string, limit: number) => {
@@ -174,9 +175,9 @@ export function DevToolPage() {
                       variant="ghost" 
                       size="sm" 
                       className="h-8 w-8 p-0" 
-                      onClick={() => navigate(`/flows/${flow.id}/edit`)}
+                      onClick={() => navigate(`/flows/${flow.id}`)}
                     >
-                      <Settings className="h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                     </Button>
                     <Button 
                       variant="ghost" 
@@ -272,9 +273,9 @@ export function DevToolPage() {
                       variant="ghost" 
                       size="sm" 
                       className="h-8 w-8 p-0" 
-                      onClick={() => navigate(`/nodes/${node.id}/edit`)}
+                      onClick={() => navigate(`/nodes/${node.id}`)}
                     >
-                      <Settings className="h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                     </Button>
                     <Button 
                       variant="ghost" 
@@ -369,9 +370,9 @@ export function DevToolPage() {
                       variant="ghost" 
                       size="sm" 
                       className="h-8 w-8 p-0" 
-                      onClick={() => navigate(`/subnodes/${subnode.id}/edit`)}
+                      onClick={() => navigate(`/subnodes/${subnode.id}`)}
                     >
-                      <Settings className="h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                     </Button>
                     <Button 
                       variant="ghost" 
@@ -470,9 +471,9 @@ export function DevToolPage() {
                       variant="ghost" 
                       size="sm" 
                       className="h-8 w-8 p-0" 
-                      onClick={() => navigate(`/parameters/${param.id}/edit`)}
+                      onClick={() => navigate(`/parameters/${param.id}`)}
                     >
-                      <Settings className="h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                     </Button>
                     <Button 
                       variant="ghost" 
@@ -531,39 +532,11 @@ export function DevToolPage() {
     }
   };
 
-  // Fetch git information
-  const fetchGitInfo = async () => {
-    try {
-      // Mock git data since we can't access actual git in frontend
-      // In a real implementation, this would call an API endpoint
-      const mockGitData = {
-        lastCommit: {
-          hash: "a1b2c3d4",
-          message: "feat: add devtool git integration",
-          author: "Developer",
-          date: new Date().toISOString(),
-          branch: "main"
-        },
-        status: "clean",
-        totalCommits: 42
-      };
-      
-      // Simulate API delay
-      setTimeout(() => {
-        setGitInfo(mockGitData);
-        setGitLoading(false);
-      }, 1000);
-    } catch (error) {
-      console.error("Error fetching git info:", error);
-      setGitLoading(false);
-    }
-  };
 
   // Initialize data
   useEffect(() => {
     fetchNodes();
     fetchParameters();
-    fetchGitInfo();
   }, []);
 
   // Sync flows data when it changes
@@ -702,26 +675,7 @@ export function DevToolPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto max-w-7xl p-6 space-y-8">
-        {/* Professional Header */}
-        <div className="border-b border-border pb-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                Development Tools
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Manage system components with full CRUD operations, import/export capabilities
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge variant="outline" className="text-xs">
-                Enterprise Dashboard
-              </Badge>
-            </div>
-          </div>
-        </div>
-
+      <div className="w-full p-6 space-y-8">
         {/* Professional Tabs */}
         <div className="bg-card border border-border rounded-lg shadow-sm">
           <Tabs defaultValue="flows" className="w-full">
@@ -754,13 +708,6 @@ export function DevToolPage() {
                 >
                   <Settings className="h-4 w-4" />
                   <span className="font-medium">Parameters</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="git" 
-                  className="flex items-center gap-2 h-12 px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
-                >
-                  <GitCommit className="h-4 w-4" />
-                  <span className="font-medium">Git</span>
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -796,14 +743,9 @@ export function DevToolPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        {renderViewControls('flows', flows.length)}
+                        {renderViewControls("flows", flows.length)}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Total: {flows.length} flows
-                      </div>
-                    </div>
                     
                     <div className="border border-border rounded-lg bg-card">
                       {renderFlowsList(getDisplayedItems(flows, 'flows'))}
@@ -844,14 +786,9 @@ export function DevToolPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        {renderViewControls('nodes', nodes.length)}
+                        {renderViewControls("nodes", nodes.length)}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Total: {nodes.length} nodes
-                      </div>
-                    </div>
                     
                     <div className="border border-border rounded-lg bg-card">
                       {renderNodesList(getDisplayedItems(nodes, 'nodes'))}
@@ -892,14 +829,9 @@ export function DevToolPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        {renderViewControls('subnodes', (subnodesData?.results || []).length)}
+                        {renderViewControls("subnodes", (subnodesData?.results || []).length)}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Total: {(subnodesData?.results || []).length} subnodes
-                      </div>
-                    </div>
                     
                     <div className="border border-border rounded-lg bg-card">
                       {renderSubnodesList(getDisplayedItems((subnodesData?.results || []), 'subnodes'))}
@@ -940,14 +872,9 @@ export function DevToolPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        {renderViewControls('parameters', parameters.length)}
+                        {renderViewControls("parameters", parameters.length)}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Total: {parameters.length} parameters
-                      </div>
-                    </div>
                     
                     <div className="border border-border rounded-lg bg-card">
                       {renderParametersList(getDisplayedItems(parameters, 'parameters'))}
@@ -957,159 +884,6 @@ export function DevToolPage() {
               </div>
             </TabsContent>
 
-            {/* Git Tab */}
-            <TabsContent value="git" className="p-0">
-              <div className="p-6 border-b border-border">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-semibold text-foreground">Git Repository</h3>
-                    <p className="text-sm text-muted-foreground">View repository information and commit history</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Button variant="outline" size="sm" className="h-9" onClick={fetchGitInfo}>
-                      <GitCommit className="h-4 w-4 mr-2" />
-                      Refresh
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-6">
-                {gitLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent" />
-                      <span className="text-sm">Loading git information...</span>
-                    </div>
-                  </div>
-                ) : gitInfo ? (
-                  <div className="space-y-6">
-                    {/* Last Commit Card */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                          <GitCommit className="h-5 w-5 text-primary" />
-                          Latest Commit
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid md:grid-cols-2 gap-6">
-                          <div className="space-y-4">
-                            <div>
-                              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                Commit Hash
-                              </Label>
-                              <div className="flex items-center gap-2 mt-1">
-                                <code className="bg-muted px-2 py-1 rounded text-sm font-mono">
-                                  {gitInfo.lastCommit.hash}
-                                </code>
-                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                  <Copy className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </div>
-                            
-                            <div>
-                              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                Message
-                              </Label>
-                              <p className="text-sm text-foreground mt-1">
-                                {gitInfo.lastCommit.message}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-4">
-                            <div>
-                              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                Author
-                              </Label>
-                              <p className="text-sm text-foreground mt-1">
-                                {gitInfo.lastCommit.author}
-                              </p>
-                            </div>
-                            
-                            <div>
-                              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                Date
-                              </Label>
-                              <div className="flex items-center gap-2 mt-1">
-                                <Clock className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm text-foreground">
-                                  {new Date(gitInfo.lastCommit.date).toLocaleString()}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Repository Stats */}
-                    <div className="grid md:grid-cols-3 gap-4">
-                      <Card>
-                        <CardContent className="p-6">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                              <GitBranch className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Current Branch</p>
-                              <p className="text-lg font-semibold text-foreground">
-                                {gitInfo.lastCommit.branch}
-                              </p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card>
-                        <CardContent className="p-6">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
-                              <GitCommit className="h-5 w-5 text-green-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Total Commits</p>
-                              <p className="text-lg font-semibold text-foreground">
-                                {gitInfo.totalCommits}
-                              </p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card>
-                        <CardContent className="p-6">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                              <Database className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Repository Status</p>
-                              <Badge 
-                                variant={gitInfo.status === 'clean' ? 'default' : 'secondary'}
-                                className="text-xs font-medium"
-                              >
-                                {gitInfo.status === 'clean' ? 'Clean' : 'Modified'}
-                              </Badge>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-12">
-                    <GitCommit className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                    <h3 className="text-lg font-semibold text-foreground mb-2">No Git Information</h3>
-                    <p className="text-sm text-muted-foreground text-center max-w-md">
-                      Unable to fetch git repository information. Make sure this is a git repository and try refreshing.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
           </Tabs>
         </div>
       </div>

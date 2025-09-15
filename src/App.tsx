@@ -1,6 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
@@ -36,6 +35,7 @@ import { MediationFlowDetailPage } from "@/pages/mediations/MediationFlowDetailP
 import { ChargingMediationPage } from "@/pages/mediations/ChargingMediationPage";
 import { ConvergentMediationPage } from "@/pages/mediations/ConvergentMediationPage";
 import { NCCMediationPage } from "@/pages/mediations/NCCMediationPage";
+import { StreamDetailPage } from "@/pages/StreamDetailPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,10 +48,9 @@ const App = () => (
       enableSystem
       disableTransitionOnChange
     >
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
           <MainLayout>
             <Routes>
               <Route path="/" element={<DashboardPage />} />
@@ -79,6 +78,7 @@ const App = () => (
               <Route path="/alerts/flows" element={<FlowAlertPage />} />
               <Route path="/alerts/nodes" element={<NodeAlertPage />} />
               <Route path="/devtool" element={<DevToolPage />} />
+              <Route path="/streams/:streamId" element={<StreamDetailPage />} />
           <Route path="/mediations/charging" element={<ChargingMediationPage />} />
           <Route path="/mediations/convergent" element={<ConvergentMediationPage />} />
           <Route path="/mediations/ncc" element={<NCCMediationPage />} />
@@ -87,12 +87,11 @@ const App = () => (
           <Route path="/mediations/ncc/flow/:flowId" element={<MediationFlowDetailPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </MainLayout>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
+        </Routes>
+      </MainLayout>
+    </BrowserRouter>
+  </ThemeProvider>
+</QueryClientProvider>
 );
 
 export default App;

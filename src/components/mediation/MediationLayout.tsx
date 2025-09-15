@@ -30,29 +30,35 @@ export function MediationLayout({
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/3">
       <div className="space-y-8 p-8">
-        {/* Header Section */}
-        <div className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/8 via-primary/4 to-transparent rounded-3xl" />
-          <div className="relative bg-card/60 backdrop-blur-xl border border-border/40 rounded-3xl p-10 shadow-elegant">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-              <div className="space-y-3">
-                <h1 className="text-4xl font-bold text-gradient">
-                  {title}
-                </h1>
-                <p className="text-lg text-muted-foreground max-w-2xl">
-                  {description}
-                </p>
+        {/* Header Section - Hidden when no title/description */}
+        {(title || description) && (
+          <div className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/8 via-primary/4 to-transparent" />
+            <div className="relative bg-card/60 backdrop-blur-xl border border-border/40 p-10">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                <div className="space-y-3">
+                  {title && (
+                    <h1 className="text-4xl font-bold text-gradient">
+                      {title}
+                    </h1>
+                  )}
+                  {description && (
+                    <p className="text-lg text-muted-foreground max-w-2xl">
+                      {description}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Enterprise Metrics Dashboard */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="bg-card/60 backdrop-blur-xl border-border/40 shadow-elegant hover:shadow-card transition-all duration-300 hover:-translate-y-1">
+          <Card className="bg-card/60 backdrop-blur-xl border-border/40 hover:bg-card/70 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className="p-3 bg-primary/10 rounded-xl">
+                <div className="p-3 bg-primary/10">
                   <Activity className="h-6 w-6 text-primary" />
                 </div>
                 <div className="space-y-1">
@@ -63,10 +69,10 @@ export function MediationLayout({
             </CardContent>
           </Card>
 
-          <Card className="bg-card/60 backdrop-blur-xl border-border/40 shadow-elegant hover:shadow-card transition-all duration-300 hover:-translate-y-1">
+          <Card className="bg-card/60 backdrop-blur-xl border-border/40 hover:bg-card/70 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className="p-3 bg-success/10 rounded-xl">
+                <div className="p-3 bg-success/10">
                   <CheckCircle className="h-6 w-6 text-success" />
                 </div>
                 <div className="space-y-1">
@@ -82,10 +88,10 @@ export function MediationLayout({
             </CardContent>
           </Card>
 
-          <Card className="bg-card/60 backdrop-blur-xl border-border/40 shadow-elegant hover:shadow-card transition-all duration-300 hover:-translate-y-1">
+          <Card className="bg-card/60 backdrop-blur-xl border-border/40 hover:bg-card/70 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className="p-3 bg-warning/10 rounded-xl">
+                <div className="p-3 bg-warning/10">
                   <AlertTriangle className="h-6 w-6 text-warning" />
                 </div>
                 <div className="space-y-1">
@@ -101,10 +107,10 @@ export function MediationLayout({
             </CardContent>
           </Card>
 
-          <Card className="bg-card/60 backdrop-blur-xl border-border/40 shadow-elegant hover:shadow-card transition-all duration-300 hover:-translate-y-1">
+          <Card className="bg-card/60 backdrop-blur-xl border-border/40 hover:bg-card/70 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className="p-3 bg-info/10 rounded-xl">
+                <div className="p-3 bg-info/10">
                   <TrendingUp className="h-6 w-6 text-info" />
                 </div>
                 <div className="space-y-1">

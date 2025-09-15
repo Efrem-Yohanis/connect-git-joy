@@ -1,9 +1,10 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Workflow, Network, GitFork, Settings, Activity, TrendingUp, Zap } from "lucide-react";
+import { Workflow, Network, GitFork, Settings, Activity, TrendingUp, Zap, GitCommit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { gitService } from "@/services/gitService";
 
 const stats = [
   { 
@@ -81,6 +82,20 @@ const quickActions = [
 
 export function HomePage() {
   const navigate = useNavigate();
+  const [gitInfo, setGitInfo] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchGitInfo = async () => {
+      try {
+        const info = await gitService.getLatestCommit();
+        setGitInfo(info);
+      } catch (error) {
+        console.error('Failed to fetch git info:', error);
+      }
+    };
+    
+    fetchGitInfo();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
@@ -217,6 +232,13 @@ export function HomePage() {
               <span>Uptime: 99.9%</span>
               <span>Active Flows: 4</span>
               <span>Total Processes: 142</span>
+              {gitInfo && (
+                <div className="flex items-center gap-2">
+                  <GitCommit className="h-4 w-4" />
+                  <span className="font-mono">{gitInfo.lastCommit.hash}</span>
+                  <span>by {gitInfo.lastCommit.author}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

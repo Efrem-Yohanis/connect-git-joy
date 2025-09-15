@@ -53,7 +53,7 @@ export const SftpCollectorNode = memo(({ data, selected }: SftpCollectorNodeProp
   return (
     <div 
       className={`
-        bg-node-background border-2 rounded-lg p-4 min-w-[200px] shadow-node relative
+        bg-node-background border-2 p-4 min-w-[200px] shadow-node relative
         ${selected ? 'border-primary' : 'border-node-border'}
         transition-all duration-200
       `}

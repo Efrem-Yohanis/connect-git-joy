@@ -21,8 +21,8 @@ import { ArrowLeft, Play, Square, Upload, CheckCircle, AlertCircle } from 'lucid
 import { useToast } from '@/hooks/use-toast';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
-import { NodePalette } from './NodePalette';
-import { PropertiesPanel } from './PropertiesPanel';
+import { CollapsibleNodePalette } from './CollapsibleNodePalette';
+import { EnhancedFlowNode } from './EnhancedFlowNode';
 import { flowService, useFlow } from '@/services/flowService';
 import { nodeService } from '@/services/nodeService';
 
@@ -38,15 +38,16 @@ import { DiameterInterfaceNode } from './nodes/DiameterInterfaceNode';
 import { RawBackupNode } from './nodes/RawBackupNode';
 
 const nodeTypes = {
-  sftp_collector: SftpCollectorNode,
-  fdc: FdcNode,
-  asn1_decoder: Asn1DecoderNode,
-  ascii_decoder: AsciiDecoderNode,
-  validation_bln: ValidationBlnNode,
-  enrichment_bln: EnrichmentBlnNode,
-  encoder: EncoderNode,
-  diameter_interface: DiameterInterfaceNode,
-  raw_backup: RawBackupNode,
+  sftp_collector: EnhancedFlowNode,
+  fdc: EnhancedFlowNode,
+  asn1_decoder: EnhancedFlowNode,
+  ascii_decoder: EnhancedFlowNode,
+  validation_bln: EnhancedFlowNode,
+  enrichment_bln: EnhancedFlowNode,
+  encoder: EnhancedFlowNode,
+  diameter_interface: EnhancedFlowNode,
+  raw_backup: EnhancedFlowNode,
+  enhanced: EnhancedFlowNode,
 };
 
 interface RealTimeFlowEditorProps {
@@ -95,7 +96,7 @@ export function RealTimeFlowEditor({ flowId }: RealTimeFlowEditorProps) {
             
             const canvasNode: Node = {
               id: canvasNodeId,
-              type: nodeType,
+              type: 'enhanced',
               position: { x: 100 + i * 250, y: 100 + (i % 3) * 150 },
               data: {
                 label: nodeFamily.name,
@@ -104,6 +105,7 @@ export function RealTimeFlowEditor({ flowId }: RealTimeFlowEditorProps) {
                 flowNodeId: apiNode.id,
                 selectedSubnode: apiNode.selected_subnode,
                 subnodes: nodeFamily.versions?.[0]?.subnodes || [],
+                onSubnodeChange: handleSubnodeChange,
               },
             };
             
@@ -114,12 +116,13 @@ export function RealTimeFlowEditor({ flowId }: RealTimeFlowEditorProps) {
           }
         }
         
-        // Convert API edges to React Flow edges
+        // Convert API edges to React Flow edges with smoothstep style (matching /streams pages)
         const canvasEdges: Edge[] = graphData.edges.map(apiEdge => ({
           id: apiEdge.id,
           source: `canvas-${apiEdge.from_node}`,
           target: `canvas-${apiEdge.to_node}`,
-          type: 'default',
+          type: 'smoothstep',
+          animated: true,
         }));
         
         setNodes(canvasNodes);
@@ -186,7 +189,7 @@ export function RealTimeFlowEditor({ flowId }: RealTimeFlowEditorProps) {
         const canvasNodeId = `canvas-${flowNode.id}`;
         const newNode: Node = {
           id: canvasNodeId,
-          type: nodeType,
+          type: 'enhanced',
           position,
           data: {
             label: nodeFamily.name,
@@ -195,6 +198,7 @@ export function RealTimeFlowEditor({ flowId }: RealTimeFlowEditorProps) {
             flowNodeId: flowNode.id,
             selectedSubnode: flowNode.selected_subnode,
             subnodes: nodeFamily.versions?.[0]?.subnodes || [],
+            onSubnodeChange: handleSubnodeChange,
           },
         };
 
@@ -231,12 +235,13 @@ export function RealTimeFlowEditor({ flowId }: RealTimeFlowEditorProps) {
       
       if (!params.source || !params.target) return;
 
-      // Optimistically update UI first
+      // Optimistically update UI first with smoothstep style
       const newEdge = {
         id: `temp-${Date.now()}`,
         source: params.source,
         target: params.target,
-        type: 'default',
+        type: 'smoothstep',
+        animated: true,
       };
       setEdges((eds) => [...eds, newEdge]);
       
@@ -258,9 +263,14 @@ export function RealTimeFlowEditor({ flowId }: RealTimeFlowEditorProps) {
         });
         console.log('✅ Edge created:', edge);
 
-        // Update edge with real ID
+        // Update edge with real ID and maintain style
         setEdges((eds) => eds.map(e => 
-          e.id === newEdge.id ? { ...e, id: edge.id } : e
+          e.id === newEdge.id ? { 
+            ...e, 
+            id: edge.id,
+            type: 'smoothstep',
+            animated: true,
+          } : e
         ));
 
         toast({
@@ -449,73 +459,55 @@ export function RealTimeFlowEditor({ flowId }: RealTimeFlowEditorProps) {
               Validate Flow
             </Button>
             
-            <Button size="sm" className="gap-2">
-              <Upload className="h-4 w-4" />
-              Deploy
+            <Button size="sm" className="gap-2" onClick={handleValidateFlow}>
+              <CheckCircle className="h-4 w-4" />
+              Save
             </Button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
-        <ResizablePanelGroup direction="horizontal">
-          {/* Node Palette */}
-          <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
-            <NodePalette onAddNode={() => {}} />
-          </ResizablePanel>
-          
-          <ResizableHandle withHandle />
-          
-          {/* Flow Canvas */}
-          <ResizablePanel defaultSize={60} minSize={40}>
-            <div 
-              ref={reactFlowWrapper}
-              className="w-full h-full"
-              onDrop={onDrop}
-              onDragOver={onDragOver}
+      <div className="flex-1 overflow-hidden flex">
+        {/* Collapsible Node Palette */}
+        <CollapsibleNodePalette onAddNode={() => {}} />
+        
+        {/* Flow Canvas */}
+        <div className="flex-1">
+          <div 
+            ref={reactFlowWrapper}
+            className="w-full h-full"
+            onDrop={onDrop}
+            onDragOver={onDragOver}
+          >
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onNodeClick={onNodeClick}
+              onPaneClick={onPaneClick}
+              nodeTypes={nodeTypes}
+              className="bg-background"
+              fitView
+              fitViewOptions={{ padding: 0.2 }}
             >
-              <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
-                onNodeClick={onNodeClick}
-                onPaneClick={onPaneClick}
-                nodeTypes={nodeTypes}
-                className="bg-background"
-                fitView
-                fitViewOptions={{ padding: 0.2 }}
-              >
-                <Controls className="bg-card border-border" />
-                <MiniMap 
-                  className="bg-card border-border" 
-                  nodeColor="#8b5cf6"
-                  maskColor="rgba(0, 0, 0, 0.1)"
-                />
-                <Background 
-                  variant={BackgroundVariant.Dots} 
-                  gap={20} 
-                  size={1} 
-                  className="opacity-30" 
-                />
-              </ReactFlow>
-            </div>
-          </ResizablePanel>
-          
-          <ResizableHandle withHandle />
-          
-          {/* Properties Panel */}
-          <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
-            <PropertiesPanel 
-              selectedNode={selectedNode}
-              onUpdateNode={() => {}}
-              onDeleteNode={() => {}}
-              flowId={flowId}
-            />
-          </ResizablePanel>
-        </ResizablePanelGroup>
+              <Controls className="bg-card border-border" />
+              <MiniMap 
+                className="bg-card border-border" 
+                nodeColor="#8b5cf6"
+                maskColor="rgba(0, 0, 0, 0.1)"
+              />
+              <Background 
+                variant={BackgroundVariant.Dots} 
+                gap={20} 
+                size={1} 
+                className="opacity-30" 
+              />
+            </ReactFlow>
+          </div>
+        </div>
       </div>
     </div>
   );

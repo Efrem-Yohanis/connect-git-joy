@@ -5,6 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Play, Square, RefreshCw } from 'lucide-react';
 import { nodeService, type NodeVersionDetail } from '@/services/nodeService';
@@ -52,6 +55,8 @@ export function TestNodePage() {
   const [selectedSubnodeId, setSelectedSubnodeId] = useState<string>('');
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [executionStatus, setExecutionStatus] = useState<ExecutionStatus>({ isRunning: false });
+  const [testFileNeeded, setTestFileNeeded] = useState<boolean>(false);
+  const [testFile, setTestFile] = useState<File | null>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -262,7 +267,7 @@ export function TestNodePage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="w-full p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={() => navigate(-1)}>
@@ -367,6 +372,36 @@ export function TestNodePage() {
               )}
             </div>
           </div>
+
+          {/* Test File Toggle */}
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="test-file-needed"
+              checked={testFileNeeded}
+              onCheckedChange={setTestFileNeeded}
+            />
+            <Label htmlFor="test-file-needed">Test file needed</Label>
+          </div>
+
+          {/* Conditional File Upload */}
+          {testFileNeeded && (
+            <div className="space-y-2">
+              <Label htmlFor="test-file" className="text-sm font-medium">
+                Upload Test File
+              </Label>
+              <Input
+                id="test-file"
+                type="file"
+                onChange={(e) => setTestFile(e.target.files?.[0] || null)}
+                className="cursor-pointer"
+              />
+              {testFile && (
+                <p className="text-sm text-muted-foreground">
+                  Selected: {testFile.name} ({(testFile.size / 1024).toFixed(1)} KB)
+                </p>
+              )}
+            </div>
+          )}
 
           {executionStatus.startTime && (
             <div className="flex items-center gap-4 text-sm text-muted-foreground">

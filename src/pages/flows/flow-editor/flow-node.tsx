@@ -28,7 +28,7 @@ export const FlowNode = memo(({ data, selected }: FlowNodeProps) => {
   return (
     <div 
       className={`
-        bg-node-background border-2 rounded-lg p-4 min-w-[200px] shadow-node
+        bg-node-background border-2 p-4 min-w-[200px] shadow-node
         ${selected ? 'border-primary' : 'border-node-border'}
         ${data.deployed ? 'shadow-[0_0_0_2px_hsl(var(--node-deployed))]' : ''}
         transition-all duration-200

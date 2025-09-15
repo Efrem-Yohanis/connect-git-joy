@@ -12,6 +12,7 @@ import { PropertiesSection } from "./components/PropertiesSection";
 import { SubnodesSection } from "./components/SubnodesSection";
 import { VersionHistoryModal } from "./components/VersionHistoryModal";
 import { CreateVersionModal } from "./components/CreateVersionModal";
+import { FileText } from "lucide-react";
 import axios from 'axios';
 import { LoadingSpinner } from "@/components/ui/loading";
 
@@ -434,9 +435,29 @@ export function NodeDetailPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Python Script</h3>
-              <span className="text-sm text-muted-foreground">
-                Version {selectedVersion?.version || node.published_version?.version}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  Version {selectedVersion?.version || node.published_version?.version}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    if (scriptContent) {
+                      navigator.clipboard.writeText(scriptContent);
+                      toast({
+                        title: "Code copied!",
+                        description: "Script content has been copied to clipboard",
+                      });
+                    }
+                  }}
+                  disabled={!scriptContent || scriptLoading || !!scriptError}
+                  className="gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  Copy
+                </Button>
+              </div>
             </div>
             <div className="relative">
               {scriptLoading ? (

@@ -1,13 +1,52 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { LoadingCard, LoadingSpinner } from "@/components/ui/loading";
-import { FlowCanvas } from "./FlowCanvas"; // Import FlowCanvas
-import { Play, Square, History, ChevronDown, CheckCircle, Clock, User } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { LoadingCard } from "@/components/ui/loading";
+import { FlowCanvas } from "./FlowCanvas";
+import { 
+  ArrowLeft,
+  Play, 
+  Pause, 
+  RotateCcw, 
+  Clock,
+  Server,
+  GitBranch,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Activity,
+  TrendingUp,
+  Filter,
+  Search,
+  Eye,
+  List,
+  Network,
+  Zap,
+  Settings,
+  Bell,
+  FileText,
+  Download,
+  Edit,
+  Plus,
+  Square,
+  History,
+  MoreVertical,
+  Copy,
+  Trash2
+} from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { PerformanceStats } from "@/pages/mediations/components/PerformanceStats";
+import { AlertsLogsPanel } from "@/pages/mediations/components/AlertsLogsPanel";
 import { useToast } from "@/hooks/use-toast";
 import { flowService, FlowVersion } from "@/services/flowService";
 
@@ -18,15 +57,15 @@ export function FlowDetailPage() {
   const [flow, setFlow] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [versions, setVersions] = useState<FlowVersion[]>([]);
-  const [versionsLoading, setVersionsLoading] = useState(false);
-  const [versionsOpen, setVersionsOpen] = useState(false);
+  const [description, setDescription] = useState("");
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
 
   useEffect(() => {
     const fetchFlowStructure = async () => {
       try {
         const response = await flowService.getFlowGraph(id!);
         setFlow(response);
+        setDescription((response as any)?.description || "No description available");
       } catch (err) {
         setError("Error fetching flow structure");
         console.error(err);
@@ -40,65 +79,6 @@ export function FlowDetailPage() {
     }
   }, [id]);
 
-  // Fetch versions when requested
-  const fetchVersions = async () => {
-    if (!id || versions.length > 0) return; // Don't refetch if already loaded
-    
-    setVersionsLoading(true);
-    try {
-      const flowVersions = await flowService.getFlowVersions(id);
-      setVersions(flowVersions);
-    } catch (err) {
-      console.error('Error fetching flow versions:', err);
-      toast({
-        title: "Error",
-        description: "Failed to load flow versions",
-        variant: "destructive"
-      });
-    } finally {
-      setVersionsLoading(false);
-    }
-  };
-
-  const handleVersionsToggle = () => {
-    setVersionsOpen(!versionsOpen);
-    if (!versionsOpen && versions.length === 0) {
-      fetchVersions();
-    }
-  };
-
-  const activateVersion = async (version: number) => {
-    if (!id) return;
-    
-    try {
-      await flowService.activateFlowVersion(id, version);
-      
-      // Update versions list to reflect the change
-      setVersions(prevVersions => 
-        prevVersions.map(v => ({
-          ...v,
-          is_active: v.version === version
-        }))
-      );
-      
-      // Refresh flow data
-      const response = await flowService.getFlowGraph(id);
-      setFlow(response);
-      
-      toast({
-        title: "Version Activated",
-        description: `Flow version ${version} is now active`,
-      });
-    } catch (err) {
-      console.error('Error activating version:', err);
-      toast({
-        title: "Error",
-        description: "Failed to activate version",
-        variant: "destructive"
-      });
-    }
-  };
-
   if (loading) {
     return <LoadingCard text="Loading flow details..." />;
   }
@@ -111,38 +91,10 @@ export function FlowDetailPage() {
     return <div>No flow found.</div>;
   }
 
-  const getFlowStatus = () => {
-    if (flow.is_running) return "running";
-    if (flow.is_deployed) return "deployed";
-    return "draft";
-  };
-
-  const getStatusBadge = () => {
-    const status = getFlowStatus();
-    switch (status) {
-      case "running":
-        return <Badge variant="default">🟢 Running</Badge>;
-      case "deployed":
-        return <Badge variant="secondary">🟡 Deployed</Badge>;
-      case "draft":
-        return <Badge variant="outline">📝 Draft</Badge>;
-      default:
-        return <Badge variant="outline">❓ Unknown</Badge>;
-    }
-  };
-
-  const canEdit = () => {
-    return !flow.is_deployed; // Only undeployed flows can be edited directly
-  };
-
-  const canStartStop = () => {
-    return flow.is_deployed; // Only deployed flows can be started/stopped
-  };
-
   // Helper function to determine node type based on name or other criteria
   const getNodeType = (nodeName?: string): string => {
     const name = (nodeName ?? '').toLowerCase();
-    if (!name) return 'generic'; // default fallback when name is missing
+    if (!name) return 'generic';
     if (name.includes('sftp') || name.includes('collector')) return 'sftp_collector';
     if (name.includes('fdc')) return 'fdc';
     if (name.includes('asn1') || name.includes('decoder')) return 'asn1_decoder';
@@ -171,7 +123,7 @@ export function FlowDetailPage() {
       id: node.id,
       type: nodeType,
       position: { 
-        x: (index % 4) * 300 + 100, // Arrange in a grid pattern
+        x: (index % 4) * 300 + 100,
         y: Math.floor(index / 4) * 200 + 100 
       },
       data: {
@@ -193,6 +145,29 @@ export function FlowDetailPage() {
     animated: true,
     label: edge.condition || undefined,
   })) || [];
+
+  // Convert nodes for table list view
+  const nodesData = Array.from(uniqueNodes.values()).map((node) => ({
+    id: node.id,
+    name: node.name,
+    type: node.type || "Generic",
+    status: flow.is_running ? "RUNNING" : "STOPPED",
+    scheduling: "Real-time",
+    processed: Math.floor(Math.random() * 50000),
+    errors: Math.floor(Math.random() * 100),
+    host: "flow-host-01",
+    position: { x: 100, y: 100 },
+    subnodeName: node.selected_subnode?.name || "Default_Subnode"
+  }));
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "RUNNING": return "bg-success text-success-foreground";
+      case "STOPPED": return "bg-destructive text-destructive-foreground";
+      case "PARTIAL": return "bg-warning text-warning-foreground";
+      default: return "bg-muted text-muted-foreground";
+    }
+  };
 
   const handleRunFlow = async () => {
     try {
@@ -232,181 +207,380 @@ export function FlowDetailPage() {
     }
   };
 
-  const handleCreateNewVersion = () => {
-    // For deployed flows, creating a new version means cloning to a new draft
-    toast({
-      title: "Creating New Version",
-      description: "This will create a new draft version that can be edited.",
-    });
-    navigate(`/flows/${id}/clone`);
-  };
+  const flowStatus = flow.is_running ? "RUNNING" : "STOPPED";
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-3xl font-bold">{flow.name}</h1>
-          {getStatusBadge()}
-        </div>
-        <div className="flex items-center space-x-2">
-          {canStartStop() && !flow.is_running && (
-            <Button onClick={handleRunFlow}>
-              <Play className="h-4 w-4 mr-2" />
-              Start
-            </Button>
-          )}
-          {canStartStop() && flow.is_running && (
-            <Button variant="destructive" onClick={handleStopFlow}>
-              <Square className="h-4 w-4 mr-2" />
-              Stop
-            </Button>
-          )}
-          {/* Edit buttons removed for configuration view */}
-        </div>
-      </div>
-
-      {/* Flow Information */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="space-y-2">
-          <h3 className="font-semibold">Description</h3>
-          <p>{flow.description}</p>
-        </div>
-        <div className="space-y-2">
-          <h3 className="font-semibold">Created At</h3>
-          <p>{new Date(flow.created_at).toLocaleString()}</p>
-        </div>
-        <div className="space-y-2">
-          <h3 className="font-semibold">Created By</h3>
-          <p>{flow.created_by}</p>
-        </div>
-        <div className="space-y-2">
-          <h3 className="font-semibold">Current Version</h3>
-          <div className="flex items-center space-x-2">
-            <Badge variant="outline">v{flow.version || 1}</Badge>
-            <Collapsible open={versionsOpen} onOpenChange={handleVersionsToggle}>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 px-2">
-                  <History className="h-3 w-3 mr-1" />
-                  Version History
-                  <ChevronDown className={`h-3 w-3 ml-1 transition-transform ${versionsOpen ? 'rotate-180' : ''}`} />
-                </Button>
-              </CollapsibleTrigger>
-            </Collapsible>
-          </div>
-        </div>
-      </div>
-
-      {/* Version History Panel */}
-      <Collapsible open={versionsOpen} onOpenChange={setVersionsOpen}>
-        <CollapsibleContent className="space-y-4">
-          <div className="border border-border rounded-lg p-4 bg-muted/20">
-            <div className="flex items-center space-x-2 mb-4">
-              <History className="h-5 w-5" />
-              <h3 className="font-semibold">Version History</h3>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="border-b border-border bg-card/50 backdrop-blur-sm">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/dashboard")}
+                className="gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                back
+              </Button>
+              
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold text-foreground">
+                  {flow.name}
+                </h1>
+                <Badge variant="outline" className="text-xs">
+                  v{flow.version}
+                </Badge>
+              </div>
             </div>
-            
-            {versionsLoading ? (
-              <div className="flex justify-center py-4">
-                <LoadingSpinner />
-              </div>
-            ) : versions.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Version</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Created By</TableHead>
-                    <TableHead>Created At</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {versions.map((version) => (
-                    <TableRow key={version.id}>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant={version.is_active ? "default" : "outline"}>
-                            v{version.version}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          {version.is_active ? (
-                            <>
-                              <CheckCircle className="h-4 w-4 text-green-500" />
-                              <span className="text-green-700 font-medium">Active</span>
-                            </>
-                          ) : (
-                            <>
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-muted-foreground">Inactive</span>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span>{version.created_by}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(version.created_at).toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-muted-foreground">
-                          {version.description || 'No description'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {!version.is_active && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                Activate
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Activate Version {version.version}</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will make version {version.version} the active version of this flow. 
-                                  The current active version will be deactivated. This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => activateVersion(version.version)}>
-                                  Activate Version
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                        {version.is_active && (
-                          <Badge variant="secondary" className="text-xs">
-                            Current
-                          </Badge>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="text-center py-4 text-muted-foreground">
-                No version history available
-              </div>
-            )}
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
 
-      {/* Flow Canvas */}
-      <div className="h-[600px] border border-border rounded-lg">
-        <FlowCanvas nodes={nodes} edges={edges} onNodeSelect={(node) => console.log(node)} />
+            <div className="flex items-center gap-2">
+              {/* Edit/Create New Version Button */}
+              {flow.is_deployed ? (
+                <Button 
+                  variant="outline"
+                  size="icon"
+                  title="Create New Version"
+                  onClick={() => toast({ title: "Create New Version", description: "Creating new version..." })}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline"
+                  size="icon"
+                  title="Edit Version"
+                  onClick={() => navigate(`/flows/${id}/edit`)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              )}
+              
+              {/* Deploy/Undeploy Button */}
+              <Button 
+                variant={flow.is_deployed ? "destructive" : "default"}
+                size="icon"
+                title={flow.is_deployed ? "Undeploy" : "Deploy"}
+                onClick={() => {
+                  setFlow(prev => ({ ...prev, is_deployed: !prev.is_deployed }));
+                  toast({
+                    title: flow.is_deployed ? "Flow Undeployed" : "Flow Deployed",
+                    description: flow.is_deployed ? "Flow has been undeployed" : "Flow has been deployed successfully"
+                  });
+                }}
+              >
+                {flow.is_deployed ? (
+                  <Square className="h-4 w-4" />
+                ) : (
+                  <Play className="h-4 w-4" />
+                )}
+              </Button>
+              
+              {/* Version History Button */}
+              <Button 
+                variant="outline" 
+                size="icon"
+                title="Version History"
+                onClick={() => toast({ title: "Version History", description: "Opening version history..." })}
+              >
+                <History className="h-4 w-4" />
+              </Button>
+
+              {/* Three Dots Menu with Flow Controls */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    title="More Actions"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {!flow.is_running && (
+                    <DropdownMenuItem onClick={handleRunFlow}>
+                      <Play className="h-4 w-4 mr-2" />
+                      Start Flow
+                    </DropdownMenuItem>
+                  )}
+                  {flow.is_running && (
+                    <DropdownMenuItem onClick={handleStopFlow}>
+                      <Pause className="h-4 w-4 mr-2" />
+                      Stop Flow
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={() => {
+                    if (flow.is_running) {
+                      handleStopFlow();
+                      setTimeout(() => handleRunFlow(), 1000);
+                    } else {
+                      handleRunFlow();
+                    }
+                  }}>
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Restart Flow
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => toast({ title: "Export Version", description: "Exporting version..." })}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export Version
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => toast({ title: "Clone Version", description: "Cloning version..." })}>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Clone Version
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => toast({ title: "Delete Version", description: "Deleting version..." })}
+                    disabled={flow.is_deployed}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Version
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6 space-y-6">
+        {/* General Info Panel */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              General Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Status */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+                <Badge className={getStatusColor(flowStatus)}>
+                  {flowStatus}
+                </Badge>
+              </div>
+
+              {/* Deployment Status */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-muted-foreground">Deployment</Label>
+                <Badge className={flow.is_deployed ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"}>
+                  {flow.is_deployed ? "DEPLOYED" : "NOT DEPLOYED"}
+                </Badge>
+              </div>
+
+              {/* Version */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                  <GitBranch className="h-4 w-4" />
+                  Version
+                </Label>
+                <div className="text-sm font-medium text-foreground">v{flow.version}</div>
+              </div>
+
+              {/* Node Count */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                  <Network className="h-4 w-4" />
+                  Nodes
+                </Label>
+                <div className="text-sm font-medium text-foreground">{flow.nodes?.length || 0} nodes</div>
+              </div>
+
+              {/* Created By */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-muted-foreground">Created By</Label>
+                <div className="text-sm font-medium text-foreground">{flow.created_by || 'Unknown'}</div>
+              </div>
+
+              {/* Updated */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                  <Clock className="h-4 w-4" />
+                  Last Updated
+                </Label>
+                <div className="text-sm font-medium text-foreground">
+                  {flow.updated_at ? new Date(flow.updated_at).toLocaleString() : 'Unknown'}
+                </div>
+              </div>
+            </div>
+
+            {/* Description (Editable) */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+              {isEditingDescription ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="min-h-[80px]"
+                    placeholder="Enter flow description..."
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setFlow(prev => ({ ...prev, description }));
+                        setIsEditingDescription(false);
+                        toast({
+                          title: "Description Updated",
+                          description: "Flow description has been updated.",
+                        });
+                      }}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setDescription((flow as any)?.description || "No description available");
+                        setIsEditingDescription(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div 
+                  className="text-sm text-foreground p-3 bg-muted/50 cursor-pointer hover:bg-muted border border-dashed border-muted-foreground/30"
+                  onClick={() => setIsEditingDescription(true)}
+                >
+                  {description || "Click to add description..."}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Flow Pipeline - Graph and List Views */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Network className="h-5 w-5" />
+              Flow Pipeline
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="graph" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="graph" className="flex items-center gap-2">
+                  <Network className="h-4 w-4" />
+                  Graph View
+                </TabsTrigger>
+                <TabsTrigger value="list" className="flex items-center gap-2">
+                  <List className="h-4 w-4" />
+                  List View
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="graph" className="mt-6">
+                {/* Graph View - ReactFlow Canvas */}
+                <div className="h-[600px] w-full bg-background border">
+                  <FlowCanvas 
+                    nodes={nodes} 
+                    edges={edges} 
+                    onNodeSelect={() => {}} 
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="list" className="mt-6">
+                {/* List View - Table */}
+                <div className="border">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="border-b bg-muted/50">
+                        <tr>
+                          <th className="text-left p-4 font-medium">Node Name</th>
+                          <th className="text-left p-4 font-medium">Type</th>
+                          <th className="text-left p-4 font-medium">Status</th>
+                          <th className="text-left p-4 font-medium">Order</th>
+                          <th className="text-left p-4 font-medium">Subnode</th>
+                          <th className="text-left p-4 font-medium">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {nodesData.map((node) => (
+                          <tr key={node.id} className="border-b hover:bg-muted/30">
+                            <td className="p-4 font-medium">{node.name}</td>
+                            <td className="p-4">
+                              <Badge variant="outline" className="capitalize">
+                                {node.type}
+                              </Badge>
+                            </td>
+                            <td className="p-4">
+                              <Badge className={getStatusColor(node.status)}>
+                                <Activity className="h-3 w-3 mr-1" />
+                                <span className="capitalize">{node.status}</span>
+                              </Badge>
+                            </td>
+                            <td className="p-4">
+                              <span className="text-sm text-muted-foreground">
+                                #{flow.nodes?.find(n => n.id === node.id)?.order || 'N/A'}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <code className="text-xs bg-muted px-2 py-1">
+                                {node.subnodeName}
+                              </code>
+                            </td>
+                             <td className="p-4">
+                               <div className="flex gap-1">
+                                 <Button 
+                                   size="sm" 
+                                   variant="outline"
+                                   onClick={() => toast({ title: "Node Started", description: `${node.name} has been started.` })}
+                                   title="Start"
+                                 >
+                                   <Play className="h-3 w-3" />
+                                 </Button>
+                                 <Button 
+                                   size="sm" 
+                                   variant="outline"
+                                   onClick={() => toast({ title: "Node Stopped", description: `${node.name} has been stopped.` })}
+                                   title="Stop"
+                                 >
+                                   <Square className="h-3 w-3" />
+                                 </Button>
+                                 <Button 
+                                   size="sm" 
+                                   variant="outline"
+                                   onClick={() => toast({ title: "Node Restarted", description: `${node.name} has been restarted.` })}
+                                   title="Restart"
+                                 >
+                                   <RotateCcw className="h-3 w-3" />
+                                 </Button>
+                               </div>
+                             </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        {/* Performance Statistics */}
+        <PerformanceStats 
+          throughputLastHour={520}
+          eventsLastHour={flow.nodes?.length * 1000 || 0}
+          eventsLast24h={flow.nodes?.length * 24000 || 0}
+          eventsLast7d={flow.nodes?.length * 168000 || 0}
+          errorRate={0.02}
+          retryCount={5}
+        />
+
+        {/* Alerts & Logs Panel */}
+        <AlertsLogsPanel />
       </div>
     </div>
   );

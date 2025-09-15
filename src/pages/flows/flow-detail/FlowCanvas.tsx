@@ -29,7 +29,7 @@ import { RawBackupNode } from '../flow-editor/nodes/RawBackupNode';
 
 // Generic node component for unknown node types
 const GenericNode = ({ data }) => (
-  <div className="px-4 py-3 bg-card border border-border rounded-lg shadow-sm min-w-[200px]">
+  <div className="px-4 py-3 bg-card border border-border shadow-sm min-w-[200px]">
     <Handle
       type="target"
       position={Position.Left}

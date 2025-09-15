@@ -1,87 +1,123 @@
 import { useParams } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Play, Square, Settings, Activity, Clock } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { StreamHeader } from "./components/StreamHeader";
+import { GeneralInfoPanel } from "./components/GeneralInfoPanel";
+import { FlowNodesView } from "./components/FlowNodesView";
+import { AlertsLogsPanel } from "./components/AlertsLogsPanel";
+import { PerformanceStats } from "./components/PerformanceStats";
+import { ExecutionSettings } from "./components/ExecutionSettings";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface FlowDetail {
   id: string;
   name: string;
   type: string;
-  status: "running" | "stopped" | "error";
+  status: "running" | "stopped" | "error" | "partial";
   description: string;
   lastRun: string;
   processedRecords: number;
   errorRate: number;
+  uptime: string;
+  lastStartTimestamp: string;
+  hosts: string[];
+  currentRevision: string;
+  baseRevision: string;
 }
 
 const mockFlowData: Record<string, FlowDetail> = {
   "1": {
     id: "1",
-    name: "Charging Stream A",
+    name: "EBU_Bulk_SMS_LMS_TO_DWH_Non_Processing_Stream",
     type: "charging",
     status: "running",
-    description: "Processes charging events from the billing system",
+    description: "Processes charging events from the billing system with real-time validation and enrichment",
     lastRun: "2024-01-15 14:30:00",
     processedRecords: 15420,
-    errorRate: 0.02
+    errorRate: 0.02,
+    uptime: "72h 14m 30s",
+    lastStartTimestamp: "2024-01-12 23:15:30",
+    hosts: ["mediation-01.domain.com", "mediation-02.domain.com", "mediation-03.domain.com"],
+    currentRevision: "v2.1.4-build.1245",
+    baseRevision: "v2.1.3-stable"
   },
   "2": {
     id: "2", 
-    name: "Charging Stream B",
+    name: "Charging_Backup_Processing_Stream",
     type: "charging",
     status: "stopped",
-    description: "Handles backup charging event processing",
+    description: "Handles backup charging event processing with enhanced error recovery",
     lastRun: "2024-01-15 12:15:00",
     processedRecords: 8930,
-    errorRate: 0.01
+    errorRate: 0.01,
+    uptime: "0h 0m 0s",
+    lastStartTimestamp: "2024-01-15 12:15:00",
+    hosts: ["mediation-backup-01.domain.com"],
+    currentRevision: "v2.1.4-build.1245",
+    baseRevision: "v2.1.3-stable"
   },
   "3": {
     id: "3",
-    name: "Convergent Stream A", 
+    name: "Convergent_Main_Billing_Stream", 
     type: "convergent",
-    status: "running",
-    description: "Main convergent billing mediation stream",
+    status: "partial",
+    description: "Main convergent billing mediation stream with multi-service support",
     lastRun: "2024-01-15 14:35:00",
     processedRecords: 23450,
-    errorRate: 0.03
+    errorRate: 0.03,
+    uptime: "168h 45m 12s",
+    lastStartTimestamp: "2024-01-08 21:49:48",
+    hosts: ["convergent-01.domain.com", "convergent-02.domain.com"],
+    currentRevision: "v3.2.1-build.2156",
+    baseRevision: "v3.2.0-stable"
   },
   "4": {
     id: "4",
-    name: "Convergent Stream B",
+    name: "Convergent_Secondary_Stream",
     type: "convergent", 
     status: "error",
-    description: "Secondary convergent processing stream",
+    description: "Secondary convergent processing stream for overflow handling",
     lastRun: "2024-01-15 13:20:00",
     processedRecords: 12340,
-    errorRate: 0.15
+    errorRate: 0.15,
+    uptime: "0h 0m 0s",
+    lastStartTimestamp: "2024-01-15 13:20:00",
+    hosts: ["convergent-secondary-01.domain.com"],
+    currentRevision: "v3.2.1-build.2156",
+    baseRevision: "v3.2.0-stable"
   },
   "5": {
     id: "5",
-    name: "NCC Stream A",
+    name: "NCC_Primary_Control_Stream",
     type: "ncc",
     status: "running", 
-    description: "Network call control mediation processing",
+    description: "Network call control mediation processing with real-time monitoring",
     lastRun: "2024-01-15 14:40:00",
     processedRecords: 9876,
-    errorRate: 0.001
+    errorRate: 0.001,
+    uptime: "240h 25m 30s",
+    lastStartTimestamp: "2024-01-05 14:14:30",
+    hosts: ["ncc-primary-01.domain.com", "ncc-primary-02.domain.com"],
+    currentRevision: "v1.8.2-build.892",
+    baseRevision: "v1.8.1-stable"
   },
   "6": {
     id: "6",
-    name: "NCC Stream B",
+    name: "NCC_Backup_Control_Stream",
     type: "ncc",
     status: "stopped",
-    description: "Backup NCC mediation stream",
+    description: "Backup NCC mediation stream for failover scenarios",
     lastRun: "2024-01-15 11:45:00", 
     processedRecords: 5432,
-    errorRate: 0.005
+    errorRate: 0.005,
+    uptime: "0h 0m 0s",
+    lastStartTimestamp: "2024-01-15 11:45:00",
+    hosts: ["ncc-backup-01.domain.com"],
+    currentRevision: "v1.8.2-build.892",
+    baseRevision: "v1.8.1-stable"
   }
 };
 
 export function MediationFlowDetailPage() {
   const { flowId } = useParams<{ flowId: string }>();
-  const navigate = useNavigate();
   
   const flow = flowId ? mockFlowData[flowId] : null;
 
@@ -96,138 +132,63 @@ export function MediationFlowDetailPage() {
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "running": return "bg-green-100 text-green-800 border-green-200";
-      case "stopped": return "bg-gray-100 text-gray-800 border-gray-200"; 
-      case "error": return "bg-red-100 text-red-800 border-red-200";
-      default: return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "running": return <Play className="h-4 w-4" />;
-      case "stopped": return <Square className="h-4 w-4" />;
-      case "error": return <Activity className="h-4 w-4" />;
-      default: return <Square className="h-4 w-4" />;
-    }
-  };
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold">{flow.name}</h1>
-          <p className="text-muted-foreground">{flow.description}</p>
-        </div>
-      </div>
+      {/* Stream Header */}
+      <StreamHeader
+        streamName={flow.name}
+        status={flow.status}
+        lastRun={flow.lastRun}
+        mediationType={flow.type}
+      />
 
-      {/* Status and Controls */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Badge className={getStatusColor(flow.status)}>
-            {getStatusIcon(flow.status)}
-            <span className="ml-1 capitalize">{flow.status}</span>
-          </Badge>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            Last run: {flow.lastRun}
-          </div>
-        </div>
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+          <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
+        </TabsList>
         
-        <div className="flex gap-2">
-          {flow.status === "stopped" && (
-            <Button size="sm" className="bg-green-600 hover:bg-green-700">
-              <Play className="h-4 w-4 mr-2" />
-              Start
-            </Button>
-          )}
-          {flow.status === "running" && (
-            <Button variant="outline" size="sm">
-              <Square className="h-4 w-4 mr-2" />
-              Stop
-            </Button>
-          )}
-          <Button variant="outline" size="sm">
-            <Settings className="h-4 w-4 mr-2" />
-            Configure
-          </Button>
-        </div>
-      </div>
-
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Processed Records</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{flow.processedRecords.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Total processed today</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Error Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{(flow.errorRate * 100).toFixed(2)}%</div>
-            <p className="text-xs text-muted-foreground">Processing errors</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Stream Type</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold capitalize">{flow.type}</div>
-            <p className="text-xs text-muted-foreground">Mediation type</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Flow Configuration */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Flow Configuration</CardTitle>
-          <CardDescription>
-            Current configuration settings for this mediation flow
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium">Input Source</label>
-              <p className="text-sm text-muted-foreground">Database queue: {flow.type}_input_queue</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Output Target</label>
-              <p className="text-sm text-muted-foreground">File system: /data/processed/{flow.type}/</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Batch Size</label>
-              <p className="text-sm text-muted-foreground">1000 records per batch</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium">Processing Interval</label>
-              <p className="text-sm text-muted-foreground">Every 30 seconds</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        <TabsContent value="overview" className="space-y-6 mt-6">
+          {/* General Info Panel */}
+          <GeneralInfoPanel
+            uptime={flow.uptime}
+            lastStartTimestamp={flow.lastStartTimestamp}
+            status={flow.status}
+            hosts={flow.hosts}
+            currentRevision={flow.currentRevision}
+            baseRevision={flow.baseRevision}
+            description={flow.description}
+          />
+          
+          {/* Performance Stats */}
+          <PerformanceStats
+            throughputLastHour={520}
+            eventsLastHour={flow.processedRecords}
+            eventsLast24h={348960}
+            eventsLast7d={2443200}
+            errorRate={flow.errorRate}
+            retryCount={15}
+          />
+        </TabsContent>
+        
+        <TabsContent value="pipeline" className="space-y-6 mt-6">
+          {/* Flow/Nodes View */}
+          <FlowNodesView nodes={[]} />
+        </TabsContent>
+        
+        <TabsContent value="monitoring" className="space-y-6 mt-6">
+          {/* Alerts & Logs */}
+          <AlertsLogsPanel />
+        </TabsContent>
+        
+        <TabsContent value="settings" className="space-y-6 mt-6">
+          {/* Execution Settings */}
+          <ExecutionSettings />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
