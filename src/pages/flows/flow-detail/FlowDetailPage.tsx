@@ -187,57 +187,67 @@ export function FlowDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      {/* Uniform Header */}
-      <UniformDetailHeader
-        name={flow.name}
-        version={flow.version}
-        status={flow.is_running ? 'running' : flow.is_deployed ? 'deployed' : 'draft'}
-        backRoute="/devtool"
-        backTab="flows"
-        isEditable={!flow.is_deployed}
-        onEditVersion={() => navigate(`/flows/${id}/edit`)}
-        onCreateNewVersion={() => toast({ title: "Create New Version", description: "Creating new version..." })}
-        onToggleDeployment={() => {
-          setFlow(prev => ({ ...prev, is_deployed: !prev.is_deployed }));
-          toast({
-            title: flow.is_deployed ? "Flow Undeployed" : "Flow Deployed",
-            description: flow.is_deployed ? "Flow has been undeployed" : "Flow has been deployed successfully"
-          });
-        }}
-        onShowVersionHistory={() => toast({ title: "Version History", description: "Opening version history..." })}
-        onExportVersion={() => toast({ title: "Export Version", description: "Exporting version..." })}
-        onCloneVersion={() => toast({ title: "Clone Version", description: "Cloning version..." })}
-        onDeleteVersion={() => toast({ title: "Delete Version", description: "Deleting version..." })}
-        customActions={[
-          {
-            label: "Start Flow",
-            icon: Play,
-            onClick: handleRunFlow,
-            disabled: flow.is_running
-          },
-          {
-            label: "Stop Flow", 
-            icon: Pause,
-            onClick: handleStopFlow,
-            disabled: !flow.is_running
-          },
-          {
-            label: "Restart Flow",
-            icon: RotateCcw,
-            onClick: () => {
-              if (flow.is_running) {
-                handleStopFlow();
-                setTimeout(() => handleRunFlow(), 1000);
-              } else {
-                handleRunFlow();
+    <div className="min-h-screen bg-background">
+      {/* Back Button */}
+      <div className="p-6 pb-0">
+        <UniformDetailBackButton 
+          backRoute="/devtool"
+          backTab="flows"
+        />
+      </div>
+
+      {/* Main Content */}
+      <div className="p-6 space-y-6">
+        {/* Uniform Header */}
+        <UniformDetailHeader
+          name={flow.name}
+          version={flow.version}
+          status={flow.is_running ? 'running' : flow.is_deployed ? 'deployed' : 'draft'}
+          backRoute="/devtool"
+          backTab="flows"
+          isEditable={!flow.is_deployed}
+          onEditVersion={() => navigate(`/flows/${id}/edit`)}
+          onCreateNewVersion={() => toast({ title: "Create New Version", description: "Creating new version..." })}
+          onToggleDeployment={() => {
+            setFlow(prev => ({ ...prev, is_deployed: !prev.is_deployed }));
+            toast({
+              title: flow.is_deployed ? "Flow Undeployed" : "Flow Deployed",
+              description: flow.is_deployed ? "Flow has been undeployed" : "Flow has been deployed successfully"
+            });
+          }}
+          onShowVersionHistory={() => toast({ title: "Version History", description: "Opening version history..." })}
+          onExportVersion={() => toast({ title: "Export Version", description: "Exporting version..." })}
+          onCloneVersion={() => toast({ title: "Clone Version", description: "Cloning version..." })}
+          onDeleteVersion={() => toast({ title: "Delete Version", description: "Deleting version..." })}
+          customActions={[
+            {
+              label: "Start Flow",
+              icon: Play,
+              onClick: handleRunFlow,
+              disabled: flow.is_running
+            },
+            {
+              label: "Stop Flow", 
+              icon: Pause,
+              onClick: handleStopFlow,
+              disabled: !flow.is_running
+            },
+            {
+              label: "Restart Flow",
+              icon: RotateCcw,
+              onClick: () => {
+                if (flow.is_running) {
+                  handleStopFlow();
+                  setTimeout(() => handleRunFlow(), 1000);
+                } else {
+                  handleRunFlow();
+                }
               }
             }
-          }
-        ]}
-      />
+          ]}
+        />
 
-      <div className="space-y-6">
+        <div className="space-y-6">
         {/* General Info Panel */}
         <Card>
           <CardHeader>
@@ -623,9 +633,7 @@ export function FlowDetailPage() {
             </Card>
           </TabsContent>
         </Tabs>
-
-        {/* Back Button */}
-        <UniformDetailBackButton backRoute="/devtool" backTab="flows" />
+      </div>
       </div>
     </div>
   );
