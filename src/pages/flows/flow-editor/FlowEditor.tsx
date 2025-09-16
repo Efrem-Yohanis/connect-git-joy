@@ -14,6 +14,7 @@ import {
   Position,
   Handle,
   BackgroundVariant,
+  MarkerType,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
@@ -149,11 +150,25 @@ export function FlowEditor() {
     async (params: Connection) => {
       console.log('🔗 Connecting nodes:', params);
       
-      // Add edge with smoothstep style (matching streams page)
-      setEdges((eds) => addEdge({
+      // Add edge with same styling as FlowPipeline - flexible bezier curves
+      const newEdge: Edge = {
+        id: `e${params.source}-${params.target}`,
         ...params,
-        type: 'smoothstep',
-      }, eds));
+        type: 'bezier', // Flexible curved connections like streams page
+        animated: true,
+        style: {
+          stroke: 'hsl(var(--primary))',
+          strokeWidth: 3,
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: 'hsl(var(--primary))',
+          width: 20,
+          height: 20,
+        },
+      };
+      
+      setEdges((eds) => addEdge(newEdge, eds));
       
       if (flowId && params.target && params.source) {
         try {
@@ -283,6 +298,22 @@ export function FlowEditor() {
     }
   };
 
+  // Default edge options for flexible bezier curves
+  const defaultEdgeOptions = {
+    type: 'bezier',
+    animated: true,
+    style: {
+      stroke: 'hsl(var(--primary))',
+      strokeWidth: 3,
+    },
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      color: 'hsl(var(--primary))',
+      width: 20,
+      height: 20,
+    },
+  };
+
   const nodeTypes = useMemo(() => ({
     simplified: SimplifiedNode,
   }), []);
@@ -363,6 +394,7 @@ export function FlowEditor() {
             onDrop={onDrop}
             onDragOver={onDragOver}
             nodeTypes={nodeTypes}
+            defaultEdgeOptions={defaultEdgeOptions}
             fitView
             className="bg-background"
           >

@@ -89,6 +89,14 @@ export function HomePage() {
       try {
         const info = await gitService.getLatestCommit();
         setGitInfo(info);
+        console.log('Latest Git Commit Info:', {
+          hash: info.lastCommit.hash,
+          message: info.lastCommit.message,
+          author: info.lastCommit.author,
+          date: new Date(info.lastCommit.date).toLocaleString(),
+          branch: info.lastCommit.branch,
+          repository: info.repository.name
+        });
       } catch (error) {
         console.error('Failed to fetch git info:', error);
       }

@@ -72,6 +72,21 @@ export function FlowsPage() {
     return "draft";
   };
 
+  const getFlowType = (flow: any) => {
+    if (!flow.description) return "Unknown";
+    const typeMatch = flow.description.match(/Mediation Type: ([\w-]+)/);
+    if (typeMatch) {
+      const type = typeMatch[1];
+      switch (type) {
+        case "ncc": return "NCC";
+        case "charging-gateway": return "Charging Gateway";
+        case "convergent": return "Convergent";
+        default: return type;
+      }
+    }
+    return "Unknown";
+  };
+
   const getStatusBadgeVariant = (status: string): "default" | "secondary" | "outline" => {
     switch (status) {
       case "running": return "default";
@@ -229,6 +244,7 @@ const handleDelete = async (flowId: string) => {
             <TableHeader>
               <TableRow className="border-border/50 bg-muted/30">
                 <TableHead className="font-semibold">Name</TableHead>
+                <TableHead className="font-semibold">Type</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
                 <TableHead className="font-semibold">Version</TableHead>
                 <TableHead className="font-semibold">Created Date</TableHead>
@@ -240,6 +256,11 @@ const handleDelete = async (flowId: string) => {
               {paginatedFlows.map((flow) => (
                 <TableRow key={flow.id} className="border-border/30 hover:bg-muted/20 transition-colors">
                   <TableCell className="font-semibold text-foreground">{flow.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="font-medium">
+                      {getFlowType(flow)}
+                    </Badge>
+                  </TableCell>
                   <TableCell>
                     <Badge 
                       variant={getStatusBadgeVariant(getFlowStatus(flow))}
@@ -292,8 +313,18 @@ const handleDelete = async (flowId: string) => {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="space-y-1">
+                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Type</div>
+                    <Badge variant="outline" className="text-xs">{getFlowType(flow)}</Badge>
+                  </div>
+                  <div className="space-y-1">
                     <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Created</div>
                     <div className="text-foreground font-medium">{new Date(flow.created_at).toLocaleDateString()}</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Version</div>
+                    <Badge variant="outline" className="text-xs">{flow.version}</Badge>
                   </div>
                   <div className="space-y-1">
                     <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">By</div>
@@ -302,10 +333,6 @@ const handleDelete = async (flowId: string) => {
                 </div>
                 
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Version</div>
-                    <Badge variant="outline" className="text-xs">{flow.version}</Badge>
-                  </div>
                   <div className="space-y-1">
                     <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Description</div>
                     <p className="text-sm text-foreground line-clamp-2">{flow.description || "No description available"}</p>

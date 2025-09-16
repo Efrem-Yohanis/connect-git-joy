@@ -22,13 +22,9 @@ interface CreateFlowDialogProps {
 }
 
 const mediationTypes = [
-  { value: "charging", label: "Charging" },
-  { value: "convergent", label: "Convergent" },
-  { value: "ncc", label: "NCC (Network Call Control)" },
-  { value: "sms", label: "SMS" },
-  { value: "data", label: "Data" },
-  { value: "voice", label: "Voice" },
-  { value: "roaming", label: "Roaming" }
+  { value: "ncc", label: "NCC" },
+  { value: "charging-gateway", label: "Charging Gateway" },
+  { value: "convergent", label: "Convergent" }
 ];
 
 export function CreateFlowDialog({ open, onOpenChange }: CreateFlowDialogProps) {

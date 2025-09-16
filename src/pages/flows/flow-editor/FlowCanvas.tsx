@@ -11,6 +11,7 @@ import {
   Edge,
   Node,
   BackgroundVariant,
+  MarkerType,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -125,8 +126,25 @@ export function FlowCanvas({ selectedNodeType, onNodeSelect, selectedNode, flowI
     async (params: Connection) => {
       console.log('🔗 Connecting nodes:', params);
       
+      // Create edge with smooth bezier curves like FlowPipeline
+      const newEdge = {
+        ...params,
+        type: 'smoothstep', // Use smoothstep for smoother connections
+        animated: true,
+        style: {
+          stroke: 'hsl(var(--primary))',
+          strokeWidth: 3,
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: 'hsl(var(--primary))',
+          width: 20,
+          height: 20,
+        },
+      };
+      
       // Optimistically update UI first
-      setEdges((eds) => addEdge(params, eds));
+      setEdges((eds) => addEdge(newEdge, eds));
       
       // Make real-time API calls if flowId is provided
       if (flowId && params.source && params.target) {

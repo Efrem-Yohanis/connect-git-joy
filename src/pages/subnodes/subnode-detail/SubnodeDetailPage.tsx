@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useSubnode, subnodeService, SubnodeVersionWithParametersByNodeVersion } from "@/services/subnodeService";
 import { toast } from "sonner";
-import { SubnodeHeader } from "./components/SubnodeHeader";
+import { UniformDetailHeader } from "@/components/UniformDetailHeader";
+import { UniformDetailBackButton } from "@/components/UniformDetailBackButton";
 import { SubnodeInfo } from "./components/SubnodeInfo";
 import { ParameterValuesTable } from "./components/ParameterValuesTable";
 import { VersionHistoryModal } from "./components/VersionHistoryModal";
@@ -169,17 +170,59 @@ export function SubnodeDetailPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header Section */}
-      <SubnodeHeader
-        subnode={subnode}
-        selectedVersion={selectedVersion}
-        onEditVersion={() => {}} // Disabled for configuration view
-        onDeployVersion={handleDeployVersion}
-        onUndeployVersion={handleUndeployVersion}
-        onCreateNewVersion={() => {}} // Disabled for configuration view
+    <div className="space-y-6 p-6">
+      {/* Uniform Header */}
+      <UniformDetailHeader
+        name={subnode.name}
+        version={selectedVersion?.version}
+        status={selectedVersion?.is_deployed ? 'deployed' : 'draft'}
+        backRoute="/devtool"
+        backTab="subnodes"
+        isEditable={selectedVersion && !selectedVersion.is_deployed && selectedVersion.is_editable}
+        onEditVersion={handleEditVersion}
+        onCreateNewVersion={() => setShowCreateVersionModal(true)}
+        onToggleDeployment={selectedVersion?.is_deployed ? handleUndeployVersion : handleDeployVersion}
         onShowVersionHistory={() => setShowVersionHistoryModal(true)}
-        onRefresh={refetch}
+        onExportVersion={async () => {
+          if (!selectedVersion) return;
+          try {
+            const data = await subnodeService.exportSubnode(id!);
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${subnode.name}_v${selectedVersion.version}.json`;
+            link.click();
+            toast.success(`Version ${selectedVersion.version} exported successfully`);
+          } catch (error) {
+            toast.error("Failed to export version");
+          }
+        }}
+        onCloneVersion={async () => {
+          if (!selectedVersion) return;
+          try {
+            await subnodeService.cloneSubnode(subnode.id, {
+              name: `${subnode.name}_v${selectedVersion.version}_clone`
+            });
+            toast.success(`Version ${selectedVersion.version} cloned successfully`);
+            refetch();
+          } catch (error) {
+            toast.error("Failed to clone version");
+          }
+        }}
+        onDeleteVersion={async () => {
+          if (!selectedVersion) return;
+          const confirmDelete = confirm(`Are you sure you want to delete version ${selectedVersion.version}? This action cannot be undone.`);
+          if (!confirmDelete) return;
+          try {
+            await subnodeService.deleteSubnodeVersion(subnode.id, selectedVersion.version);
+            toast.success(`Version ${selectedVersion.version} deleted successfully`);
+            refetch();
+          } catch (error) {
+            toast.error("Failed to delete version");
+          }
+        }}
         isLoading={isLoading}
       />
 
@@ -212,6 +255,9 @@ export function SubnodeDetailPage() {
         onCreateVersion={handleCreateNewVersion}
         isLoading={isLoading}
       />
+
+      {/* Back Button */}
+      <UniformDetailBackButton backRoute="/devtool" backTab="subnodes" />
     </div>
   );
 }

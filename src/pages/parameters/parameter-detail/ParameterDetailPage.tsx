@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { UniformDetailHeader } from "@/components/UniformDetailHeader";
+import { UniformDetailBackButton } from "@/components/UniformDetailBackButton";
 import {
   Table,
   TableBody,
@@ -108,55 +110,16 @@ export function ParameterDetailPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center space-x-3">
-              <h1 className="text-3xl font-bold">🧩 {parameter.key}</h1>
-              <Badge variant={parameter.is_active ? "default" : "secondary"}>
-                {parameter.is_active ? "🟢 Published" : "⚪ Draft"}
-              </Badge>
-            </div>
-            <div className="flex items-center space-x-3 mt-2">
-              <span className="text-muted-foreground">Default Value:</span>
-              <span className="font-medium">{parameter.default_value}</span>
-              <Badge variant={parameter.required ? "default" : "secondary"}>
-                {parameter.required ? "Required" : "Optional"}
-              </Badge>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            {/* Edit button removed for configuration view */}
-            {parameter.is_active ? (
-              <Button 
-                variant="outline" 
-                size="icon" 
-                onClick={handleUndeploy}
-                disabled={deploying}
-                title="Undeploy Parameter"
-              >
-                <Square className="h-4 w-4" />
-              </Button>
-            ) : (
-              <Button 
-                variant="outline" 
-                size="icon" 
-                onClick={handleDeploy}
-                disabled={deploying}
-                title="Deploy Parameter"
-              >
-                <Play className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-        </div>
-      </div>
+    <div className="space-y-6 p-6">
+      {/* Uniform Header */}
+      <UniformDetailHeader
+        name={parameter.key}
+        status={parameter.is_active ? 'deployed' : 'draft'}
+        backRoute="/devtool"
+        backTab="parameters"
+        onToggleDeployment={parameter.is_active ? handleUndeploy : handleDeploy}
+        isLoading={deploying}
+      />
 
       {/* Parameter Info Section */}
       <Card>
@@ -186,6 +149,9 @@ export function ParameterDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Back Button */}
+      <UniformDetailBackButton backRoute="/devtool" backTab="parameters" />
     </div>
   );
 }

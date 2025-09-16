@@ -12,6 +12,7 @@ import {
   Edge,
   Node,
   BackgroundVariant,
+  MarkerType,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -116,13 +117,23 @@ export function RealTimeFlowEditor({ flowId }: RealTimeFlowEditorProps) {
           }
         }
         
-        // Convert API edges to React Flow edges with smoothstep style (matching /streams pages)
+        // Convert API edges to React Flow edges with same styling as FlowPipeline
         const canvasEdges: Edge[] = graphData.edges.map(apiEdge => ({
           id: apiEdge.id,
           source: `canvas-${apiEdge.from_node}`,
           target: `canvas-${apiEdge.to_node}`,
-          type: 'smoothstep',
+          type: 'bezier', // Use bezier curves for flexible connections
           animated: true,
+          style: {
+            stroke: 'hsl(var(--primary))',
+            strokeWidth: 3,
+          },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: 'hsl(var(--primary))',
+            width: 20,
+            height: 20,
+          },
         }));
         
         setNodes(canvasNodes);

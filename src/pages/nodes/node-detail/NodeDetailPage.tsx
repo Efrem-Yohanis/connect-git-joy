@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { nodeService, type Node, type NodeVersionDetail } from "@/services/nodeService";
 import { parameterService, type Parameter } from "@/services/parameterService";
-import { NodeHeader } from "./components/NodeHeader";
+import { UniformDetailHeader } from "@/components/UniformDetailHeader";
+import { UniformDetailBackButton } from "@/components/UniformDetailBackButton";
 import { NodeSummary } from "./components/NodeSummary";
 import { PropertiesSection } from "./components/PropertiesSection";
 import { SubnodesSection } from "./components/SubnodesSection";
@@ -384,19 +385,23 @@ export function NodeDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
-
-      {/* Header Section */}
-      <NodeHeader
-        node={node}
-        selectedVersion={selectedVersion}
-        onEditVersion={() => {}} // Disabled for configuration view
+    <div className="space-y-6 p-6">
+      {/* Uniform Header */}
+      <UniformDetailHeader
+        name={node.name}
+        version={selectedVersion?.version || node.published_version?.version}
+        status={selectedVersion?.state === 'published' ? 'deployed' : selectedVersion && selectedVersion.state !== 'published' ? 'editable' : 'stopped'}
+        backRoute="/devtool"
+        backTab="nodes"
+        isEditable={selectedVersion && selectedVersion.state !== 'published'}
+        onEditVersion={handleEditVersion}
+        onCreateNewVersion={handleCreateNewVersion}
         onToggleDeployment={handleToggleDeployment}
-        onCreateNewVersion={() => {}} // Disabled for configuration view
         onShowVersionHistory={handleShowVersionHistory}
-        onDeleteVersion={handleDeleteVersion}
-        onCloneVersion={handleCloneVersion}
         onExportVersion={handleExportVersion}
+        onCloneVersion={handleCloneVersion}
+        onDeleteVersion={handleDeleteVersion}
+        onTestAction={() => navigate(`/nodes/${node.id}/test`)}
         isLoading={loading}
       />
 
@@ -509,10 +514,8 @@ export function NodeDetailPage() {
       />
 
       {/* Back to Nodes Button */}
-      <div className="flex justify-end pt-4">
-        <Button variant="outline" onClick={() => navigate('/nodes')}>
-          Back to Nodes
-        </Button>
+      <div className="flex justify-center pt-4">
+        <UniformDetailBackButton backRoute="/devtool" backTab="nodes" />
       </div>
     </div>
   );

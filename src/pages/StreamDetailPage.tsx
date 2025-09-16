@@ -186,21 +186,6 @@ export function StreamDetailPage() {
                 </h1>
               </div>
             </div>
-
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" className="gap-2">
-                <Play className="h-4 w-4" />
-                Start
-              </Button>
-              <Button size="sm" variant="outline" className="gap-2">
-                <Pause className="h-4 w-4" />
-                Stop  
-              </Button>
-              <Button size="sm" variant="outline" className="gap-2">
-                <RotateCcw className="h-4 w-4" />
-                Restart
-              </Button>
-            </div>
           </div>
         </div>
       </div>
