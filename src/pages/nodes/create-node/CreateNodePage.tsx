@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { nodeService } from "@/services/nodeService";
@@ -15,6 +16,8 @@ export function CreateNodePage() {
   
   const [nodeName, setNodeName] = useState("");
   const [nodeDescription, setNodeDescription] = useState("");
+  const [mediationType, setMediationType] = useState("");
+  const [nodeType, setNodeType] = useState("");
   const [scriptFile, setScriptFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -39,6 +42,24 @@ export function CreateNodePage() {
       toast({
         title: "Error",
         description: "Description is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!mediationType) {
+      toast({
+        title: "Error",
+        description: "Mediation type is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!nodeType) {
+      toast({
+        title: "Error",
+        description: "Node type is required",
         variant: "destructive"
       });
       return;
@@ -129,6 +150,41 @@ export function CreateNodePage() {
               placeholder="Enter node description"
               rows={3}
             />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="mediationType">Mediation Type *</Label>
+              <Select value={mediationType} onValueChange={setMediationType}>
+                <SelectTrigger id="mediationType">
+                  <SelectValue placeholder="Select mediation type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="charging">Charging</SelectItem>
+                  <SelectItem value="convergent">Convergent Billing</SelectItem>
+                  <SelectItem value="ncc">Network Call Control</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="nodeType">Node Type *</Label>
+              <Select value={nodeType} onValueChange={setNodeType}>
+                <SelectTrigger id="nodeType">
+                  <SelectValue placeholder="Select node type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="collector">Collector</SelectItem>
+                  <SelectItem value="decoder">Decoder</SelectItem>
+                  <SelectItem value="encoder">Encoder</SelectItem>
+                  <SelectItem value="enrichment">Enrichment</SelectItem>
+                  <SelectItem value="validation">Validation</SelectItem>
+                  <SelectItem value="fdc">FDC</SelectItem>
+                  <SelectItem value="interface">Interface</SelectItem>
+                  <SelectItem value="backup">Backup</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div>

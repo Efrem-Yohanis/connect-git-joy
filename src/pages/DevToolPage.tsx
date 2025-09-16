@@ -932,7 +932,7 @@ export function DevToolPage() {
                       <Upload className="h-4 w-4 mr-2" />
                       Import
                     </Button>
-                    <Button onClick={() => navigate("/nodes/create")} size="sm" className="h-9">
+                    <Button onClick={() => navigate("/nodes/new")} size="sm" className="h-9">
                       <Plus className="h-4 w-4 mr-2" />
                       New Node
                     </Button>
@@ -1002,7 +1002,7 @@ export function DevToolPage() {
                       <Upload className="h-4 w-4 mr-2" />
                       Import
                     </Button>
-                    <Button onClick={() => navigate("/parameters/create")} size="sm" className="h-9">
+                    <Button onClick={() => navigate("/parameters/new")} size="sm" className="h-9">
                       <Plus className="h-4 w-4 mr-2" />
                       New Parameter
                     </Button>

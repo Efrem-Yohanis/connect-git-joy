@@ -152,7 +152,7 @@ export function CreateSubnodePage() {
                 <SelectContent>
                   {nodes?.map((node) => (
                     <SelectItem key={node.id} value={node.id}>
-                      {node.name}
+                      {node.name} | {node.mediation_type || 'N/A'}
                     </SelectItem>
                   ))}
                 </SelectContent>
