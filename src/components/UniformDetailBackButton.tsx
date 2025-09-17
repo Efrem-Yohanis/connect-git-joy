@@ -19,15 +19,13 @@ export function UniformDetailBackButton({ backRoute, backTab }: UniformDetailBac
   };
 
   return (
-    <div className="flex justify-center pt-6">
-      <Button
-        variant="outline"
-        onClick={handleBack}
-        className="w-32"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back
-      </Button>
-    </div>
+    <Button
+      variant="outline"
+      onClick={handleBack}
+      className="w-32"
+    >
+      <ArrowLeft className="h-4 w-4 mr-2" />
+      Back
+    </Button>
   );
 }

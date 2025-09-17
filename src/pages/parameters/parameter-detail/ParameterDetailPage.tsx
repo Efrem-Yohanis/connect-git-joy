@@ -151,7 +151,9 @@ export function ParameterDetailPage() {
       </Card>
 
       {/* Back Button */}
-      <UniformDetailBackButton backRoute="/devtool" backTab="parameters" />
+      <div className="flex justify-end pt-6">
+        <UniformDetailBackButton backRoute="/devtool" backTab="parameters" />
+      </div>
     </div>
   );
 }

@@ -513,8 +513,8 @@ export function NodeDetailPage() {
         isLoading={loading}
       />
 
-      {/* Back to Nodes Button */}
-      <div className="flex justify-center pt-4">
+      {/* Back Button */}
+      <div className="flex justify-end pt-6">
         <UniformDetailBackButton backRoute="/devtool" backTab="nodes" />
       </div>
     </div>

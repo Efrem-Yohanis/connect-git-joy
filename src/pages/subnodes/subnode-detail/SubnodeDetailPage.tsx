@@ -257,7 +257,9 @@ export function SubnodeDetailPage() {
       />
 
       {/* Back Button */}
-      <UniformDetailBackButton backRoute="/devtool" backTab="subnodes" />
+      <div className="flex justify-end pt-6">
+        <UniformDetailBackButton backRoute="/devtool" backTab="subnodes" />
+      </div>
     </div>
   );
 }

@@ -187,17 +187,7 @@ export function FlowDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Back Button */}
-      <div className="p-6 pb-0">
-        <UniformDetailBackButton 
-          backRoute="/devtool"
-          backTab="flows"
-        />
-      </div>
-
-      {/* Main Content */}
-      <div className="p-6 space-y-6">
+    <div className="space-y-6 p-6">
         {/* Uniform Header */}
         <UniformDetailHeader
           name={flow.name}
@@ -633,7 +623,11 @@ export function FlowDetailPage() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
+
+        {/* Back Button */}
+        <div className="flex justify-end pt-6">
+          <UniformDetailBackButton backRoute="/devtool" backTab="flows" />
+        </div>
       </div>
     </div>
   );
