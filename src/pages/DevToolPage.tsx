@@ -55,7 +55,12 @@ export function DevToolPage() {
     subnodes: 1,
     parameters: 1
   });
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState<{[key: string]: number}>({
+    flows: 10,
+    nodes: 10,
+    subnodes: 10,
+    parameters: 10
+  });
   
   // Flows state
   const { data: flowsData, loading: flowsLoading } = useItems();
@@ -77,67 +82,152 @@ export function DevToolPage() {
 
   // Helper functions
   const getPaginatedItems = (items: any[], category: string) => {
-    const start = (currentPage[category] - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
+    const start = (currentPage[category] - 1) * itemsPerPage[category];
+    const end = start + itemsPerPage[category];
     return items.slice(start, end);
   };
 
-  const getTotalPages = (itemCount: number) => {
-    return Math.ceil(itemCount / itemsPerPage);
+  const getTotalPages = (itemCount: number, category: string) => {
+    return Math.ceil(itemCount / itemsPerPage[category]);
   };
 
   const handlePageChange = (category: string, page: number) => {
     setCurrentPage(prev => ({ ...prev, [category]: page }));
   };
 
+  const handleItemsPerPageChange = (category: string, newItemsPerPage: number) => {
+    setItemsPerPage(prev => ({ ...prev, [category]: newItemsPerPage }));
+    setCurrentPage(prev => ({ ...prev, [category]: 1 })); // Reset to first page
+  };
+
   // Render pagination component
   const renderPagination = (category: string, totalItems: number) => {
-    const totalPages = getTotalPages(totalItems);
+    const totalPages = getTotalPages(totalItems, category);
     const current = currentPage[category];
+    const itemsPerPageValue = itemsPerPage[category];
     
-    if (totalPages <= 1) return null;
+    if (totalItems === 0) return null;
+
+    // Calculate page range to show
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, current - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    // Adjust start page if we're near the end
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    const pageNumbers = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
 
     return (
-      <div className="flex items-center justify-between px-2">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Eye className="h-3.5 w-3.5" />
-          <span>
-            {((current - 1) * itemsPerPage) + 1} - {Math.min(current * itemsPerPage, totalItems)} of {totalItems}
-          </span>
+      <div className="flex items-center justify-between px-2 py-4 border-t border-border bg-muted/20">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Eye className="h-4 w-4" />
+            <span>
+              {((current - 1) * itemsPerPageValue) + 1} - {Math.min(current * itemsPerPageValue, totalItems)} of {totalItems}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground">Show:</Label>
+            <Select
+              value={itemsPerPageValue.toString()}
+              onValueChange={(value) => handleItemsPerPageChange(category, parseInt(value))}
+            >
+              <SelectTrigger className="w-20 h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="15">15</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-sm text-muted-foreground">per page</span>
+          </div>
         </div>
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious 
-                onClick={() => current > 1 && handlePageChange(category, current - 1)}
-                className={current <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-              />
-            </PaginationItem>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <PaginationItem key={page}>
-                <PaginationLink
-                  onClick={() => handlePageChange(category, page)}
-                  isActive={current === page}
-                  className="cursor-pointer"
-                >
-                  {page}
-                </PaginationLink>
+        
+        {totalPages > 1 && (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => current > 1 && handlePageChange(category, current - 1)}
+                  className={current <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
               </PaginationItem>
-            ))}
-            <PaginationItem>
-              <PaginationNext 
-                onClick={() => current < totalPages && handlePageChange(category, current + 1)}
-                className={current >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+              
+              {/* First page */}
+              {startPage > 1 && (
+                <>
+                  <PaginationItem>
+                    <PaginationLink
+                      onClick={() => handlePageChange(category, 1)}
+                      className="cursor-pointer"
+                    >
+                      1
+                    </PaginationLink>
+                  </PaginationItem>
+                  {startPage > 2 && (
+                    <PaginationItem>
+                      <span className="px-3 py-2 text-muted-foreground">...</span>
+                    </PaginationItem>
+                  )}
+                </>
+              )}
+              
+              {/* Page numbers */}
+              {pageNumbers.map((page) => (
+                <PaginationItem key={page}>
+                  <PaginationLink
+                    onClick={() => handlePageChange(category, page)}
+                    isActive={current === page}
+                    className="cursor-pointer"
+                  >
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              
+              {/* Last page */}
+              {endPage < totalPages && (
+                <>
+                  {endPage < totalPages - 1 && (
+                    <PaginationItem>
+                      <span className="px-3 py-2 text-muted-foreground">...</span>
+                    </PaginationItem>
+                  )}
+                  <PaginationItem>
+                    <PaginationLink
+                      onClick={() => handlePageChange(category, totalPages)}
+                      className="cursor-pointer"
+                    >
+                      {totalPages}
+                    </PaginationLink>
+                  </PaginationItem>
+                </>
+              )}
+              
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => current < totalPages && handlePageChange(category, current + 1)}
+                  className={current >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
       </div>
     );
   };
 
   // Professional table renders
-  const renderFlowsList = (flows: any[]) => (
+  const renderFlowsList = (flows: any[], totalCount: number) => (
     <div className="space-y-4">
       <div className="overflow-hidden border border-border rounded-lg bg-card">
         <Table>
@@ -277,11 +367,11 @@ export function DevToolPage() {
           </TableBody>
         </Table>
       </div>
-      {renderPagination('flows', flows.length)}
+      {renderPagination('flows', totalCount)}
     </div>
   );
 
-  const renderNodesList = (nodes: any[]) => (
+  const renderNodesList = (nodes: any[], totalCount: number) => (
     <div className="space-y-4">
       <div className="overflow-hidden border border-border rounded-lg bg-card">
         <Table>
@@ -416,11 +506,11 @@ export function DevToolPage() {
           </TableBody>
         </Table>
       </div>
-      {renderPagination('nodes', nodes.length)}
+      {renderPagination('nodes', totalCount)}
     </div>
   );
 
-  const renderSubnodesList = (subnodes: any[]) => (
+  const renderSubnodesList = (subnodes: any[], totalCount: number) => (
     <div className="space-y-4">
       <div className="overflow-hidden border border-border rounded-lg bg-card">
         <Table>
@@ -544,11 +634,11 @@ export function DevToolPage() {
           </TableBody>
         </Table>
       </div>
-      {renderPagination('subnodes', subnodes.length)}
+      {renderPagination('subnodes', totalCount)}
     </div>
   );
 
-  const renderParametersList = (parameters: any[]) => (
+  const renderParametersList = (parameters: any[], totalCount: number) => (
     <div className="space-y-4">
       <div className="overflow-hidden border border-border rounded-lg bg-card">
         <Table>
@@ -676,7 +766,7 @@ export function DevToolPage() {
           </TableBody>
         </Table>
       </div>
-      {renderPagination('parameters', parameters.length)}
+      {renderPagination('parameters', totalCount)}
     </div>
   );
 
@@ -914,7 +1004,7 @@ export function DevToolPage() {
                     </div>
                   </div>
                 ) : (
-                  renderFlowsList(getPaginatedItems(flows, 'flows'))
+                  renderFlowsList(getPaginatedItems(flows, 'flows'), flows.length)
                 )}
               </div>
             </TabsContent>
@@ -949,7 +1039,7 @@ export function DevToolPage() {
                     </div>
                   </div>
                 ) : (
-                  renderNodesList(getPaginatedItems(nodes, 'nodes'))
+                  renderNodesList(getPaginatedItems(nodes, 'nodes'), nodes.length)
                 )}
               </div>
             </TabsContent>
@@ -984,7 +1074,7 @@ export function DevToolPage() {
                     </div>
                   </div>
                 ) : (
-                  renderSubnodesList(getPaginatedItems((subnodesData?.results || []), 'subnodes'))
+                  renderSubnodesList(getPaginatedItems((subnodesData?.results || []), 'subnodes'), (subnodesData?.results || []).length)
                 )}
               </div>
             </TabsContent>
@@ -1019,7 +1109,7 @@ export function DevToolPage() {
                     </div>
                   </div>
                 ) : (
-                  renderParametersList(getPaginatedItems(parameters, 'parameters'))
+                  renderParametersList(getPaginatedItems(parameters, 'parameters'), parameters.length)
                 )}
               </div>
             </TabsContent>
