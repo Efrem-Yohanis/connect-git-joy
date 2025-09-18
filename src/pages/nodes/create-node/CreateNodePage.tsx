@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { nodeService } from "@/services/nodeService";
 
@@ -18,6 +19,7 @@ export function CreateNodePage() {
   const [nodeDescription, setNodeDescription] = useState("");
   const [mediationType, setMediationType] = useState("");
   const [nodeType, setNodeType] = useState("");
+  const [hasSubnodes, setHasSubnodes] = useState(false);
   const [scriptFile, setScriptFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -184,6 +186,23 @@ export function CreateNodePage() {
                   <SelectItem value="backup">Backup</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <Label htmlFor="hasSubnodes">Subnode</Label>
+              <p className="text-sm text-muted-foreground">Enable if this node requires subnodes</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="hasSubnodes" className="text-sm">
+                {hasSubnodes ? "Yes" : "No"}
+              </Label>
+              <Switch
+                id="hasSubnodes"
+                checked={hasSubnodes}
+                onCheckedChange={setHasSubnodes}
+              />
             </div>
           </div>
 

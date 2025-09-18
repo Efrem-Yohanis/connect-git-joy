@@ -4,9 +4,35 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, TrendingUp, TrendingDown, Activity, BarChart3, Clock, CheckCircle, XCircle, Filter, Calendar, Download, Shield, LineChart } from "lucide-react";
+import { GitCommit } from "lucide-react";
+import { useEffect, useState } from "react";
+import { gitService } from "@/services/gitService";
+
 
 export function FlowReportPage() {
+  const [gitInfo, setGitInfo] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchGitInfo = async () => {
+      try {
+        const info = await gitService.getLatestCommit();
+        setGitInfo(info);
+        console.log('Latest Git Commit Info:', {
+          hash: info.lastCommit.hash,
+          message: info.lastCommit.message,
+          author: info.lastCommit.author,
+          date: new Date(info.lastCommit.date).toLocaleString(),
+          branch: info.lastCommit.branch,
+          repository: info.repository.name
+        });
+      } catch (error) {
+        console.error('Failed to fetch git info:', error);
+      }
+    };
+    
+    fetchGitInfo();
+  }, []);
+
   const summaryMetrics = {
     totalFlows: 12,
     activeFlows: 8,
@@ -120,220 +146,181 @@ export function FlowReportPage() {
     }
   };
 
-  const getTrendIcon = (trend: string) => {
-    switch (trend) {
-      case 'up': return <TrendingUp className="h-4 w-4 text-success" />;
-      case 'down': return <TrendingDown className="h-4 w-4 text-destructive" />;
-      case 'stable': return <Activity className="h-4 w-4 text-muted-foreground" />;
-      default: return <Activity className="h-4 w-4" />;
-    }
-  };
 
   return (
-    <main className="min-h-screen bg-background p-8 space-y-8">
-      {/* Professional Summary Metrics - Reduced to 4 key cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="metric-card hover-scale animate-fade-in">
-          <div className="flex items-center gap-4">
-            <div className="p-4 bg-primary/10">
-              <Activity className="h-7 w-7 text-primary" />
+    <main className="min-h-screen bg-background p-8 space-y-6">
+      {/* Git Commit Info */}
+      {gitInfo && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex items-center gap-2">
+                <GitCommit className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-muted-foreground">Latest Commit:</span>
+                <span className="font-mono text-sm text-foreground">{gitInfo.lastCommit.hash}</span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <span className="text-sm font-medium text-foreground">{gitInfo.lastCommit.message}</span>
+                <span className="text-sm text-muted-foreground">by {gitInfo.lastCommit.author}</span>
+                <span className="text-sm text-muted-foreground">{new Date(gitInfo.lastCommit.date).toLocaleDateString()}</span>
+                <Badge variant="outline" className="text-xs">
+                  {gitInfo.lastCommit.branch}
+                </Badge>
+              </div>
             </div>
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Active Flows</p>
-              <p className="text-3xl font-bold text-foreground">{summaryMetrics.activeFlows}</p>
-              <p className="text-xs text-muted-foreground">of {summaryMetrics.totalFlows} Total</p>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
+      )}
 
-        <div className="metric-card hover-scale animate-fade-in" style={{ animationDelay: '100ms' }}>
-          <div className="flex items-center gap-4">
-            <div className="p-4 bg-success/10">
-              <BarChart3 className="h-7 w-7 text-success" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Success Rate</p>
-              <p className="text-3xl font-bold text-success">{summaryMetrics.avgSuccessRate}%</p>
-              <p className="text-xs text-muted-foreground">Avg Performance</p>
-            </div>
-          </div>
-        </div>
+      {/* Simple Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Active Flows</p>
+            <p className="text-2xl font-medium text-foreground">{summaryMetrics.activeFlows}</p>
+            <p className="text-xs text-muted-foreground">of {summaryMetrics.totalFlows} Total</p>
+          </CardContent>
+        </Card>
 
-        <div className="metric-card hover-scale animate-fade-in" style={{ animationDelay: '200ms' }}>
-          <div className="flex items-center gap-4">
-            <div className="p-4 bg-info/10">
-              <TrendingUp className="h-7 w-7 text-info" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Executions</p>
-              <p className="text-3xl font-bold text-foreground">{summaryMetrics.totalExecutions.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">Total Processed</p>
-            </div>
-          </div>
-        </div>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Success Rate</p>
+            <p className="text-2xl font-medium text-foreground">{summaryMetrics.avgSuccessRate}%</p>
+            <p className="text-xs text-muted-foreground">Average Performance</p>
+          </CardContent>
+        </Card>
 
-        <div className="metric-card hover-scale animate-fade-in" style={{ animationDelay: '300ms' }}>
-          <div className="flex items-center gap-4">
-            <div className="p-4 bg-muted/10">
-              <FileText className="h-7 w-7 text-muted-foreground" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Data Volume</p>
-              <p className="text-3xl font-bold text-foreground">{summaryMetrics.totalDataProcessed}</p>
-              <p className="text-xs text-muted-foreground">{summaryMetrics.avgExecutionTime} Avg Time</p>
-            </div>
-          </div>
-        </div>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Total Executions</p>
+            <p className="text-2xl font-medium text-foreground">{summaryMetrics.totalExecutions.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground">Processed</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Data Volume</p>
+            <p className="text-2xl font-medium text-foreground">{summaryMetrics.totalDataProcessed}</p>
+            <p className="text-xs text-muted-foreground">{summaryMetrics.avgExecutionTime} Avg Time</p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Professional Filters Section */}
-      <div className="professional-card p-8 animate-slide-up">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
-            <Select defaultValue="all">
-              <SelectTrigger className="w-48 h-12 bg-background/80 border-border/60 transition-all duration-200">
-                <SelectValue placeholder="Flow Status" />
-              </SelectTrigger>
-              <SelectContent className="border-border/60">
-                <SelectItem value="all">All Flows</SelectItem>
-                <SelectItem value="healthy">Healthy</SelectItem>
-                <SelectItem value="warning">Warning</SelectItem>
-                <SelectItem value="error">Error</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="flex items-center gap-3">
-              <Calendar className="h-5 w-5 text-muted-foreground" />
-              <Input 
-                type="date" 
-                className="w-auto h-12 bg-background/80 border-border/60 transition-all duration-200" 
-                placeholder="From" 
-              />
-              <Input 
-                type="date" 
-                className="w-auto h-12 bg-background/80 border-border/60 transition-all duration-200" 
-                placeholder="To" 
-              />
+      {/* Simple Filters */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <Select defaultValue="all">
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Flow Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Flows</SelectItem>
+                  <SelectItem value="healthy">Healthy</SelectItem>
+                  <SelectItem value="warning">Warning</SelectItem>
+                  <SelectItem value="error">Error</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex items-center gap-2">
+                <Input type="date" className="w-auto" placeholder="From" />
+                <Input type="date" className="w-auto" placeholder="To" />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline">Export Data</Button>
+              <Button>Advanced Filters</Button>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="lg" className="h-12 px-6 border-border/60 hover:border-primary/40">
-              <Download className="h-5 w-5 mr-2" />
-              Export Data
-            </Button>
-            <Button size="lg" className="h-12 px-6 bg-gradient-to-r from-primary to-primary/90">
-              <Filter className="h-5 w-5 mr-2" />
-              Advanced Filters
-            </Button>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Professional Data Table */}
-      <div className="professional-card overflow-hidden animate-scale-in">
-        <div className="p-8 border-b border-border/40">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10">
-              <BarChart3 className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">Flow Performance Analytics</h2>
-              <p className="text-muted-foreground">Comprehensive execution metrics and performance insights</p>
-            </div>
-          </div>
-        </div>
-        <div className="p-0">
+      {/* Simple Data Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Flow Performance Analytics</CardTitle>
+          <CardDescription>Execution metrics and performance insights</CardDescription>
+        </CardHeader>
+        <CardContent>
           <Table>
             <TableHeader>
-              <TableRow className="border-border/40 bg-muted/10 hover:bg-muted/10">
-                <TableHead className="font-semibold text-foreground py-4 px-6">Flow Name</TableHead>
-                <TableHead className="font-semibold text-foreground py-4">Status</TableHead>
-                <TableHead className="font-semibold text-foreground py-4">Executions</TableHead>
-                <TableHead className="font-semibold text-foreground py-4">Success Rate</TableHead>
-                <TableHead className="font-semibold text-foreground py-4">Avg Time</TableHead>
-                <TableHead className="font-semibold text-foreground py-4">Data Processed</TableHead>
-                <TableHead className="font-semibold text-foreground py-4">Peak Hour</TableHead>
-                <TableHead className="font-semibold text-foreground py-4">Last Execution</TableHead>
-                <TableHead className="font-semibold text-foreground py-4">Trend</TableHead>
+              <TableRow>
+                <TableHead>Flow Name</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Executions</TableHead>
+                <TableHead>Success Rate</TableHead>
+                <TableHead>Average Time</TableHead>
+                <TableHead>Data Processed</TableHead>
+                <TableHead>Peak Hour</TableHead>
+                <TableHead>Last Execution</TableHead>
+                <TableHead>Trend</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {reports.map((report, index) => (
-                <TableRow 
-                  key={report.id} 
-                  className="border-border/30 hover:bg-muted/5 transition-all duration-200 surface-interactive"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <TableCell className="py-4 px-6">
-                    <div className="space-y-1">
-                      <div className="font-semibold text-foreground">{report.flowName}</div>
+              {reports.map((report) => (
+                <TableRow key={report.id}>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{report.flowName}</div>
                       <div className="text-sm text-muted-foreground">Flow execution pipeline</div>
                     </div>
                   </TableCell>
-                  <TableCell className="py-4">{getStatusBadge(report.status)}</TableCell>
-                  <TableCell className="py-4">
+                  <TableCell>{getStatusBadge(report.status)}</TableCell>
+                  <TableCell>
                     <div>
-                      <p className="font-medium text-foreground">{report.executionCount.toLocaleString()}</p>
+                      <p className="font-medium">{report.executionCount.toLocaleString()}</p>
                       <p className="text-xs text-muted-foreground">
                         {report.successCount} success, {report.failureCount} failed
                       </p>
                     </div>
                   </TableCell>
-                  <TableCell className="py-4">
-                    <div className="flex items-center gap-2">
-                      <span className={`font-medium ${report.successRate >= 98 ? 'text-success' : report.successRate >= 95 ? 'text-warning' : 'text-destructive'}`}>
-                        {report.successRate}%
-                      </span>
-                    </div>
+                  <TableCell>
+                    <span className="font-medium">{report.successRate}%</span>
                   </TableCell>
-                  <TableCell className="py-4 font-medium">{report.avgExecutionTime}</TableCell>
-                  <TableCell className="py-4 font-mono text-sm font-medium">{report.dataProcessed}</TableCell>
-                  <TableCell className="py-4 font-medium">{report.peakHour}</TableCell>
-                  <TableCell className="py-4 text-sm text-muted-foreground">{report.lastExecution}</TableCell>
-                  <TableCell className="py-4">{getTrendIcon(report.trend)}</TableCell>
+                  <TableCell className="font-medium">{report.avgExecutionTime}</TableCell>
+                  <TableCell className="font-mono text-sm">{report.dataProcessed}</TableCell>
+                  <TableCell className="font-medium">{report.peakHour}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{report.lastExecution}</TableCell>
+                  <TableCell className="font-medium">{report.trend}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Professional Error Analysis */}
-      <div className="professional-card p-8 animate-fade-in">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="p-3 bg-warning/10">
-            <Activity className="h-6 w-6 text-warning" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Error Analysis & Insights</h2>
-            <p className="text-muted-foreground">Comprehensive error tracking and resolution patterns</p>
-          </div>
-        </div>
-        <div className="grid gap-6">
-          {reports.map((report, index) => (
-            <div key={report.id} className="surface-interactive p-6 border border-border/40 animate-slide-up" style={{ animationDelay: `${index * 100}ms` }}>
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="font-semibold text-lg text-foreground">{report.flowName}</p>
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-medium text-destructive">{report.failureCount}</span> failures out of{" "}
-                    <span className="font-medium">{report.executionCount}</span> total executions
-                  </p>
-                  <div className="flex items-center gap-2 mt-3">
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div 
-                        className="h-2 rounded-full bg-gradient-to-r from-success to-success" 
-                        style={{ width: `${report.successRate}%` }}
-                      />
+      {/* Simple Error Analysis */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Error Analysis</CardTitle>
+          <CardDescription>Error tracking and resolution patterns</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {reports.map((report) => (
+              <div key={report.id} className="p-4 border rounded">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <p className="font-medium">{report.flowName}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {report.failureCount} failures out of {report.executionCount} total executions
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <div className="w-full bg-muted rounded-full h-2 max-w-xs">
+                        <div 
+                          className="h-2 rounded-full bg-foreground" 
+                          style={{ width: `${report.successRate}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium">{report.successRate}%</span>
                     </div>
-                    <span className="text-xs font-medium text-success min-w-fit">{report.successRate}%</span>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right space-y-1">
-                    <div className="text-xs text-muted-foreground">Error Types</div>
-                    <div className="flex flex-wrap gap-2 justify-end">
+                  <div className="text-right">
+                    <div className="text-xs text-muted-foreground mb-1">Error Types</div>
+                    <div className="flex flex-wrap gap-1 justify-end">
                       {report.errorTypes.map((error, errorIndex) => (
-                        <Badge key={errorIndex} variant="outline" className="text-xs border-destructive/20 text-destructive bg-destructive/5">
+                        <Badge key={errorIndex} variant="outline" className="text-xs">
                           {error}
                         </Badge>
                       ))}
@@ -341,10 +328,10 @@ export function FlowReportPage() {
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </main>
   );
 }

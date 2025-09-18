@@ -6,22 +6,17 @@ import { ThemeProvider } from "next-themes";
 
 import { MainLayout } from "@/components/layout/main-layout";
 import { DashboardPage } from "@/pages/DashboardPage";
-import { HomePage } from "@/pages/HomePage";
-import { FlowsPage } from "@/pages/flows/FlowsPage";
 import { FlowDetailPage } from "@/pages/flows/flow-detail/FlowDetailPage";
 import { FlowEditorRoute } from '@/pages/flows/flow-editor/FlowEditorRoute';
-import { NodesPage } from "@/pages/nodes/NodesPage";
-import { NodeDetailPage } from "@/pages/nodes/node-detail/NodeDetailPage";
 import { CreateNodePage } from "@/pages/nodes/create-node/CreateNodePage";
+import { NodeDetailPage } from "@/pages/nodes/node-detail/NodeDetailPage";
 import { EditNodePage } from "@/pages/nodes/edit-node/EditNodePage";
 import { TestNodePage } from "@/pages/nodes/test-node/TestNodePage";
-import { SubnodesPage } from "@/pages/subnodes/SubnodesPage";
 import { SubnodeDetailPage } from "@/pages/subnodes/subnode-detail/SubnodeDetailPage";
 import { EditSubnodePage } from "@/pages/subnodes/edit-subnode/EditSubnodePage";
 import { EditVersionPage } from "@/pages/subnodes/edit-version/EditVersionPage";
 import { EditVersionPage as EditNodeVersionPage } from "@/pages/nodes/edit-version/EditVersionPage";
 import { CreateSubnodePage } from "@/pages/subnodes/create-subnode/CreateSubnodePage";
-import { ParametersPage } from "@/pages/parameters/ParametersPage";
 import { ParameterDetailPage } from "@/pages/parameters/parameter-detail/ParameterDetailPage";
 import { CreateParameterPage } from "@/pages/parameters/create-parameter/CreateParameterPage";
 import { EditParameterPage } from "@/pages/parameters/edit-parameter/EditParameterPage";
@@ -36,6 +31,10 @@ import { ChargingMediationPage } from "@/pages/mediations/ChargingMediationPage"
 import { ConvergentMediationPage } from "@/pages/mediations/ConvergentMediationPage";
 import { NCCMediationPage } from "@/pages/mediations/NCCMediationPage";
 import { StreamDetailPage } from "@/pages/StreamDetailPage";
+import { FlowsRedirect } from "@/components/redirects/FlowsRedirect";
+import { NodesRedirect } from "@/components/redirects/NodesRedirect";
+import { SubnodesRedirect } from "@/components/redirects/SubnodesRedirect";
+import { ParametersRedirect } from "@/components/redirects/ParametersRedirect";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,21 +53,21 @@ const App = () => (
           <MainLayout>
             <Routes>
               <Route path="/" element={<DashboardPage />} />
-              <Route path="/flows" element={<FlowsPage />} />
+              <Route path="/flows" element={<FlowsRedirect />} />
               <Route path="/flows/:id" element={<FlowDetailPage />} />
               <Route path="/flows/:id/edit" element={<FlowEditorRoute />} />
-              <Route path="/nodes" element={<NodesPage />} />
+              <Route path="/nodes" element={<NodesRedirect />} />
               <Route path="/nodes/new" element={<CreateNodePage />} />
               <Route path="/nodes/:id" element={<NodeDetailPage />} />
               <Route path="/nodes/:id/edit" element={<EditNodePage />} />
               <Route path="/nodes/:id/edit-version" element={<EditNodeVersionPage />} />
               <Route path="/nodes/:id/test" element={<TestNodePage />} />
-              <Route path="/subnodes" element={<SubnodesPage />} />
+              <Route path="/subnodes" element={<SubnodesRedirect />} />
               <Route path="/subnodes/:id" element={<SubnodeDetailPage />} />
             <Route path="/subnodes/create" element={<CreateSubnodePage />} />
             <Route path="/subnodes/:id/edit" element={<EditSubnodePage />} />
             <Route path="/subnodes/:id/edit-version" element={<EditVersionPage />} />
-              <Route path="/parameters" element={<ParametersPage />} />
+              <Route path="/parameters" element={<ParametersRedirect />} />
               <Route path="/parameters/new" element={<CreateParameterPage />} />
               <Route path="/parameters/:id" element={<ParameterDetailPage />} />
               <Route path="/parameters/:id/edit" element={<EditParameterPage />} />

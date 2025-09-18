@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, Clock, CheckCircle, XCircle, Filter, Calendar, Search, Download, Server, Activity } from "lucide-react";
+
 
 export function NodeAlertPage() {
   const nodeInfo = {
@@ -96,15 +96,6 @@ export function NodeAlertPage() {
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active': return <XCircle className="h-4 w-4 text-destructive" />;
-      case 'acknowledged': return <Clock className="h-4 w-4 text-secondary" />;
-      case 'monitoring': return <Bell className="h-4 w-4 text-primary" />;
-      case 'resolved': return <CheckCircle className="h-4 w-4 text-success" />;
-      default: return <Bell className="h-4 w-4" />;
-    }
-  };
 
   const activeAlerts = alerts.filter(alert => alert.status === 'active');
   const totalAlerts = alerts.length;
@@ -113,18 +104,12 @@ export function NodeAlertPage() {
     <main className="w-full p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Server className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Node Detail & Alerts</h1>
-            <p className="text-muted-foreground">Monitor node health, streams, and active alerts</p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Node Detail & Alerts</h1>
+          <p className="text-muted-foreground">Monitor node health, streams, and active alerts</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
+          <Button variant="outline" size="sm">Export</Button>
           <Button variant="outline" size="sm">View Diagnostic Files</Button>
           <Button variant="outline" size="sm">View Configuration</Button>
         </div>
@@ -192,12 +177,9 @@ export function NodeAlertPage() {
           <div className="grid gap-4">
             {streams.map((stream) => (
               <div key={stream.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Activity className="h-5 w-5 text-success" />
-                  <div>
-                    <p className="font-medium">{stream.name}</p>
-                    <p className="text-sm text-muted-foreground">Last processed: {stream.lastProcessed}</p>
-                  </div>
+                <div>
+                  <p className="font-medium">{stream.name}</p>
+                  <p className="text-sm text-muted-foreground">Last processed: {stream.lastProcessed}</p>
                 </div>
                 <div className="flex items-center gap-4 text-sm">
                   <Badge variant="outline" className="bg-success/10 text-success border-success/20">
@@ -248,12 +230,9 @@ export function NodeAlertPage() {
                     <input type="checkbox" className="rounded" />
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(alert.status)}
-                      <Badge className={getSeverityColor(alert.severity)} variant="outline">
-                        {alert.severity.toUpperCase()}
-                      </Badge>
-                    </div>
+                    <Badge className={getSeverityColor(alert.severity)} variant="outline">
+                      {alert.severity.toUpperCase()}
+                    </Badge>
                   </TableCell>
                   <TableCell className="font-mono text-sm">{alert.code}</TableCell>
                   <TableCell className="max-w-md">

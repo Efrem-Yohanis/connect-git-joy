@@ -211,6 +211,11 @@ export function FlowDetailPage() {
           onDeleteVersion={() => toast({ title: "Delete Version", description: "Deleting version..." })}
           customActions={[
             {
+              label: "Edit Flow",
+              icon: Edit,
+              onClick: () => navigate(`/flows/${id}/edit`)
+            },
+            {
               label: "Start Flow",
               icon: Play,
               onClick: handleRunFlow,
@@ -384,50 +389,54 @@ export function FlowDetailPage() {
             {viewMode === "graph" ? (
               <FlowPipeline nodesData={nodesData} />
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Node Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Scheduling</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Processed</TableHead>
-                    <TableHead>Errors</TableHead>
-                    <TableHead>Host</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {nodesData.map((node) => (
-                    <TableRow key={node.id}>
-                      <TableCell className="font-medium">{node.name}</TableCell>
-                      <TableCell>{node.type}</TableCell>
-                      <TableCell>{node.scheduling}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(node.status)}>
-                          {node.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{node.processed.toLocaleString()}</TableCell>
-                      <TableCell>{node.errors}</TableCell>
-                      <TableCell>{node.host}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button size="sm" variant="outline" className="h-8 w-8 p-0">
-                            <Play className="h-3 w-3" />
-                          </Button>
-                          <Button size="sm" variant="outline" className="h-8 w-8 p-0">
-                            <Pause className="h-3 w-3" />
-                          </Button>
-                          <Button size="sm" variant="outline" className="h-8 w-8 p-0">
-                            <RotateCcw className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              <div className="overflow-hidden border border-border rounded-lg bg-card">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-b border-border bg-muted/30">
+                      <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Node Name</TableHead>
+                      <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</TableHead>
+                      <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Scheduling</TableHead>
+                      <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</TableHead>
+                      <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Processed</TableHead>
+                      <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Errors</TableHead>
+                      <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Host</TableHead>
+                      <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {nodesData.map((node) => (
+                      <TableRow key={node.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell className="px-6 py-4">
+                          <div className="font-medium text-foreground">{node.name}</div>
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-sm text-muted-foreground">{node.type}</TableCell>
+                        <TableCell className="px-6 py-4 text-sm text-muted-foreground">{node.scheduling}</TableCell>
+                        <TableCell className="px-6 py-4">
+                          <Badge className={getStatusColor(node.status)}>
+                            {node.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-sm text-muted-foreground">{node.processed.toLocaleString()}</TableCell>
+                        <TableCell className="px-6 py-4 text-sm text-muted-foreground">{node.errors}</TableCell>
+                        <TableCell className="px-6 py-4 text-sm text-muted-foreground">{node.host}</TableCell>
+                        <TableCell className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                              <Play className="h-3 w-3" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                              <Pause className="h-3 w-3" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                              <RotateCcw className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>

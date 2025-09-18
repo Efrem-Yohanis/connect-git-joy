@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, Clock, CheckCircle, XCircle, Filter, Calendar, Search, Download, RefreshCw, Bell, Shield } from "lucide-react";
+
 
 export function FlowAlertPage() {
   const alerts = [
@@ -75,62 +75,41 @@ export function FlowAlertPage() {
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active': return <XCircle className="h-4 w-4 text-destructive" />;
-      case 'acknowledged': return <Clock className="h-4 w-4 text-secondary" />;
-      case 'resolved': return <CheckCircle className="h-4 w-4 text-success" />;
-      default: return <AlertTriangle className="h-4 w-4" />;
-    }
-  };
 
   const activeAlerts = alerts.filter(alert => alert.status === 'active');
   const totalAlerts = alerts.length;
 
   return (
-    <main className="w-full p-6 space-y-8">
-      {/* Enhanced Header */}
+    <main className="w-full p-6 space-y-8 bg-background">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-primary/10 rounded-lg">
-            <Shield className="h-8 w-8 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              Flow Alerts & Monitoring
-            </h1>
-            <p className="text-muted-foreground text-lg">Enterprise-grade flow execution monitoring and alert management system</p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">
+            Flow Alerts & Monitoring
+          </h1>
+          <p className="text-muted-foreground text-lg">Real-time monitoring of flow execution streams</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" className="shadow-sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm">
             Auto Refresh
           </Button>
-          <Button variant="outline" size="sm" className="shadow-sm">
-            <Download className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm">
             Export Report
           </Button>
-          <Button size="sm" className="shadow-lg bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80">
-            <Bell className="h-4 w-4 mr-2" />
+          <Button size="sm">
             Configure Alerts
           </Button>
         </div>
       </div>
 
-      {/* Enhanced Summary Cards */}
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-destructive/5 to-destructive/10 hover:shadow-xl transition-all duration-300">
+        <Card className="border border-border bg-card">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-destructive/20 rounded-lg">
-                  <XCircle className="h-6 w-6 text-destructive" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Critical Alerts</p>
-                  <p className="text-3xl font-bold text-destructive">{activeAlerts.length}</p>
-                </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Critical Alerts</p>
+                <p className="text-3xl font-bold text-destructive">{activeAlerts.length}</p>
               </div>
               <div className="text-right">
                 <p className="text-xs text-muted-foreground">Last 24h</p>
@@ -140,74 +119,47 @@ export function FlowAlertPage() {
           </CardContent>
         </Card>
         
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-primary/5 to-primary/10 hover:shadow-xl transition-all duration-300">
+        <Card className="border border-border bg-card">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/20 rounded-lg">
-                  <AlertTriangle className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Alerts</p>
-                  <p className="text-3xl font-bold text-foreground">{totalAlerts}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">All time</p>
-                <p className="text-sm font-semibold text-primary">Active</p>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Alerts</p>
+                <p className="text-3xl font-bold text-foreground">{totalAlerts}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-secondary/5 to-secondary/10 hover:shadow-xl transition-all duration-300">
+        <Card className="border border-border bg-card">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-secondary/20 rounded-lg">
-                  <Clock className="h-6 w-6 text-secondary-foreground" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Acknowledged</p>
-                  <p className="text-3xl font-bold text-foreground">{alerts.filter(a => a.status === 'acknowledged').length}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">Processing</p>
-                <p className="text-sm font-semibold text-secondary-foreground">In Progress</p>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Acknowledged</p>
+                <p className="text-3xl font-bold text-foreground">{alerts.filter(a => a.status === 'acknowledged').length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-success/5 to-success/10 hover:shadow-xl transition-all duration-300">
+        <Card className="border border-border bg-card">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-success/20 rounded-lg">
-                  <CheckCircle className="h-6 w-6 text-success" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Resolved</p>
-                  <p className="text-3xl font-bold text-success">{alerts.filter(a => a.status === 'resolved').length}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">Success rate</p>
-                <p className="text-sm font-semibold text-success">98.2%</p>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Resolved</p>
+                <p className="text-3xl font-bold text-success">{alerts.filter(a => a.status === 'resolved').length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Enhanced Filters and Controls */}
-      <Card className="border-0 shadow-lg bg-gradient-to-r from-background to-muted/20">
+      {/* Filters and Controls */}
+      <Card className="border border-border bg-card">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <h3 className="text-lg font-semibold">Alert Management</h3>
-              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+              <h3 className="text-lg font-semibold text-foreground">Alert Management</h3>
+              <Badge variant="outline" className="text-primary border-primary/20">
                 Live Monitoring
               </Badge>
             </div>
@@ -234,10 +186,7 @@ export function FlowAlertPage() {
                   <SelectItem value="30d">Last 30 days</SelectItem>
                 </SelectContent>
               </Select>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input className="pl-10 w-80" placeholder="Search flows, messages, or error codes..." />
-              </div>
+                <Input className="w-80" placeholder="Search flows, messages, or error codes..." />
             </div>
           </div>
           
@@ -271,10 +220,7 @@ export function FlowAlertPage() {
               
               <Card className="border">
                 <CardHeader className="bg-muted/50">
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-destructive" />
-                    Active Alert Details
-                  </CardTitle>
+                  <CardTitle>Active Alert Details</CardTitle>
                   <CardDescription>Real-time monitoring of flow execution issues</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -300,12 +246,9 @@ export function FlowAlertPage() {
                             <input type="checkbox" className="rounded" />
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-2">
-                              {getStatusIcon(alert.status)}
-                              <Badge className={getSeverityColor(alert.severity)} variant="outline">
-                                {alert.severity.toUpperCase()}
-                              </Badge>
-                            </div>
+                            <Badge className={getSeverityColor(alert.severity)} variant="outline">
+                              {alert.severity.toUpperCase()}
+                            </Badge>
                           </TableCell>
                           <TableCell className="font-mono text-sm">{alert.code}</TableCell>
                           <TableCell className="max-w-md">
@@ -328,10 +271,7 @@ export function FlowAlertPage() {
             <TabsContent value="all" className="space-y-6">
               <Card className="border">
                 <CardHeader className="bg-muted/50">
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-primary" />
-                    Complete Alert History ({totalAlerts})
-                  </CardTitle>
+                  <CardTitle>Complete Alert History ({totalAlerts})</CardTitle>
                   <CardDescription>Comprehensive view of all system alerts and their resolution status</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -351,12 +291,9 @@ export function FlowAlertPage() {
                       {alerts.map((alert) => (
                         <TableRow key={alert.id} className="hover:bg-muted/50">
                           <TableCell>
-                            <div className="flex items-center gap-2">
-                              {getStatusIcon(alert.status)}
-                              <Badge className={getSeverityColor(alert.severity)} variant="outline">
-                                {alert.severity.toUpperCase()}
-                              </Badge>
-                            </div>
+                            <Badge className={getSeverityColor(alert.severity)} variant="outline">
+                              {alert.severity.toUpperCase()}
+                            </Badge>
                           </TableCell>
                           <TableCell className="font-mono text-sm">{alert.code}</TableCell>
                           <TableCell className="max-w-md">

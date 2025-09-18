@@ -34,7 +34,8 @@ import {
   Settings,
   Bell,
   FileText,
-  Download
+  Download,
+  Edit
 } from "lucide-react";
 import { PerformanceStats } from "@/pages/mediations/components/PerformanceStats";
 import { AlertsLogsPanel } from "@/pages/mediations/components/AlertsLogsPanel";
@@ -293,7 +294,14 @@ export function StreamDetailPage() {
                 <Network className="h-5 w-5" />
                 Flow Pipeline
               </CardTitle>
-              <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => navigate(`/flows/${streamId?.replace('stream-', '')}/edit`)}
+                  className="gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  Edit Stream
+                </Button>
                 <Button
                   variant={viewMode === "graph" ? "default" : "outline"}
                   size="sm"

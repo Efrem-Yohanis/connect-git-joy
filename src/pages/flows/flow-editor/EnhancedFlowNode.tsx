@@ -126,7 +126,7 @@ export const EnhancedFlowNode = memo(({ data, selected, id }: EnhancedFlowNodePr
             <SelectTrigger className="w-full text-xs h-8">
               <SelectValue placeholder="Select subnode" />
             </SelectTrigger>
-            <SelectContent className="z-50">
+            <SelectContent className="z-[9999] bg-popover border border-border shadow-lg">
               <SelectItem value="none" className="text-xs">
                 No subnode selected
               </SelectItem>

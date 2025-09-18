@@ -106,45 +106,40 @@ export function HomePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary-glow/10" />
-        <div className="relative px-6 py-12">
-          <div className="max-w-4xl mx-auto text-center space-y-6">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-sm">
-              <Zap className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-primary">Flow Orchestrator</span>
-            </div>
-            
-            <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-foreground via-primary to-primary-glow bg-clip-text text-transparent leading-tight">
-              Safaricom ET Pipeline
-            </h1>
-            
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Manage and orchestrate your data flows with precision. Monitor deployments, 
-              track performance, and scale your operations seamlessly.
-            </p>
-            
-            <div className="flex gap-4 justify-center mt-8">
-              <Button 
-                size="lg" 
-                className="bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary transition-all duration-300 shadow-lg hover:shadow-xl"
-                onClick={() => navigate("/flows")}
-              >
-                <Workflow className="mr-2 h-5 w-5" />
-                View Flows
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="border-primary/20 hover:bg-primary/5 transition-all duration-300"
-                onClick={() => navigate("/nodes")}
-              >
-                <Network className="mr-2 h-5 w-5" />
-                Manage Nodes
-              </Button>
-            </div>
+      <div className="px-6 py-12 border-b border-border bg-card">
+        <div className="max-w-4xl mx-auto text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted border border-border">
+            <Zap className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium text-foreground">Flow Orchestrator</span>
+          </div>
+          
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground">
+            Safaricom ET Pipeline
+          </h1>
+          
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Manage and orchestrate your data flows with precision. Monitor deployments, 
+            track performance, and scale your operations seamlessly.
+          </p>
+          
+          <div className="flex gap-4 justify-center mt-8">
+            <Button 
+              size="lg" 
+              onClick={() => navigate("/flows")}
+            >
+              <Workflow className="mr-2 h-5 w-5" />
+              View Flows
+            </Button>
+            <Button 
+              variant="outline" 
+              size="lg"
+              onClick={() => navigate("/nodes")}
+            >
+              <Network className="mr-2 h-5 w-5" />
+              Manage Nodes
+            </Button>
           </div>
         </div>
       </div>
@@ -153,7 +148,7 @@ export function HomePage() {
       <div className="px-6 py-12">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">System Overview</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-4">System Overview</h2>
             <p className="text-muted-foreground">Real-time insights into your pipeline infrastructure</p>
           </div>
           
@@ -161,15 +156,14 @@ export function HomePage() {
             {stats.map((stat, index) => (
               <Card 
                 key={stat.title} 
-                className={`group cursor-pointer hover:shadow-2xl transition-all duration-500 border-0 bg-gradient-to-br ${stat.bgGradient} backdrop-blur-sm hover:scale-105 animate-fade-in`}
-                style={{ animationDelay: `${index * 150}ms` }}
+                className="cursor-pointer hover:bg-muted/50 transition-colors border border-border bg-card"
                 onClick={() => navigate(stat.route)}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                  <CardTitle className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                  <CardTitle className="text-sm font-semibold text-foreground">
                     {stat.title}
                   </CardTitle>
-                  <div className={`p-2 rounded-lg bg-white/20 backdrop-blur-sm group-hover:scale-110 transition-transform duration-300`}>
+                  <div className="p-2 bg-muted">
                     <stat.icon className={`h-5 w-5 ${stat.color}`} />
                   </div>
                 </CardHeader>
@@ -177,7 +171,7 @@ export function HomePage() {
                   {stat.details.map((detail, detailIndex) => (
                     <div key={detailIndex} className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground font-medium">{detail.label}:</span>
-                      <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+                      <span className="text-lg font-bold text-foreground">
                         {detail.value}
                       </span>
                     </div>
@@ -190,10 +184,10 @@ export function HomePage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="px-6 py-12 bg-gradient-to-r from-background to-muted/20">
+      <div className="px-6 py-12 bg-muted/20">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">Quick Actions</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-4">Quick Actions</h2>
             <p className="text-muted-foreground">Get started with common tasks</p>
           </div>
           
@@ -201,15 +195,14 @@ export function HomePage() {
             {quickActions.map((action, index) => (
               <Card 
                 key={action.title}
-                className="group cursor-pointer hover:shadow-xl transition-all duration-300 border-border/50 hover:border-primary/30 bg-card/50 backdrop-blur-sm hover:bg-card/80 animate-fade-in"
-                style={{ animationDelay: `${(index + 4) * 150}ms` }}
+                className="cursor-pointer hover:bg-muted/50 transition-colors border border-border bg-card"
                 onClick={() => navigate(action.route)}
               >
                 <CardHeader className="text-center pb-4">
-                  <div className="mx-auto mb-4 p-3 rounded-full bg-gradient-to-br from-primary/10 to-primary-glow/10 w-fit group-hover:scale-110 transition-transform duration-300">
+                  <div className="mx-auto mb-4 p-3 bg-muted w-fit">
                     <action.icon className={`h-8 w-8 ${action.color}`} />
                   </div>
-                  <CardTitle className="text-lg font-semibold group-hover:text-primary transition-colors">
+                  <CardTitle className="text-lg font-semibold text-foreground">
                     {action.title}
                   </CardTitle>
                   <CardDescription className="text-muted-foreground">
@@ -223,12 +216,12 @@ export function HomePage() {
       </div>
 
       {/* Status Bar */}
-      <div className="px-6 py-8 border-t border-border/50 bg-muted/30 backdrop-blur-sm">
+      <div className="px-6 py-8 border-t border-border bg-card">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-success rounded-full animate-pulse"></div>
+                <div className="w-3 h-3 bg-success"></div>
                 <span className="text-sm font-medium text-foreground">System Operational</span>
               </div>
               <div className="text-sm text-muted-foreground">
@@ -236,15 +229,24 @@ export function HomePage() {
               </div>
             </div>
             
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <span>Uptime: 99.9%</span>
-              <span>Active Flows: 4</span>
-              <span>Total Processes: 142</span>
+            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-6">
+                <span>Uptime: 99.9%</span>
+                <span>Active Flows: 4</span>
+                <span>Total Processes: 142</span>
+              </div>
               {gitInfo && (
-                <div className="flex items-center gap-2">
-                  <GitCommit className="h-4 w-4" />
-                  <span className="font-mono">{gitInfo.lastCommit.hash}</span>
-                  <span>by {gitInfo.lastCommit.author}</span>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 p-3 bg-muted/30 border border-border">
+                  <div className="flex items-center gap-2">
+                    <GitCommit className="h-4 w-4 text-primary" />
+                    <span className="font-mono text-foreground">{gitInfo.lastCommit.hash}</span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                    <span className="text-foreground font-medium">{gitInfo.lastCommit.message}</span>
+                    <span>by {gitInfo.lastCommit.author}</span>
+                    <span>{new Date(gitInfo.lastCommit.date).toLocaleDateString()}</span>
+                    <span className="text-xs bg-primary/20 text-primary px-2 py-1 font-medium">{gitInfo.lastCommit.branch}</span>
+                  </div>
                 </div>
               )}
             </div>

@@ -22,7 +22,10 @@ import {
   List,
   Eye,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  RefreshCcw,
+  ExternalLink,
+  GitCommit
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +39,7 @@ import { LoadingCard } from "@/components/ui/loading";
 import { useSection } from "@/contexts/SectionContext";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import axios from "axios";
+import { gitService, type GitInfo } from "@/services/gitService";
 
 export function DevToolPage() {
   const navigate = useNavigate();
@@ -123,19 +127,13 @@ export function DevToolPage() {
     return (
       <div className="flex items-center justify-between px-2 py-4 border-t border-border bg-muted/20">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Eye className="h-4 w-4" />
-            <span>
-              {((current - 1) * itemsPerPageValue) + 1} - {Math.min(current * itemsPerPageValue, totalItems)} of {totalItems}
-            </span>
-          </div>
           <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground">Show:</Label>
-            <Select
-              value={itemsPerPageValue.toString()}
+            <span className="text-sm text-muted-foreground">Items per page:</span>
+            <Select 
+              value={itemsPerPageValue.toString()} 
               onValueChange={(value) => handleItemsPerPageChange(category, parseInt(value))}
             >
-              <SelectTrigger className="w-20 h-8">
+              <SelectTrigger className="w-20">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -144,11 +142,14 @@ export function DevToolPage() {
                 <SelectItem value="15">15</SelectItem>
                 <SelectItem value="20">20</SelectItem>
                 <SelectItem value="25">25</SelectItem>
+                <SelectItem value="30">30</SelectItem>
+                <SelectItem value="40">40</SelectItem>
                 <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
               </SelectContent>
             </Select>
-            <span className="text-sm text-muted-foreground">per page</span>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Showing {(current - 1) * itemsPerPageValue + 1} to {Math.min(current * itemsPerPageValue, totalItems)} of {totalItems} entries
           </div>
         </div>
         
@@ -258,14 +259,11 @@ export function DevToolPage() {
           </TableHeader>
           <TableBody>
             {flows.length === 0 ? (
-              <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                   <div className="flex flex-col items-center gap-2">
-                    <Workflow className="h-8 w-8 text-muted-foreground/50" />
                     <span className="text-sm">No flows found</span>
                   </div>
                 </TableCell>
-              </TableRow>
             ) : (
               flows.map((flow: any) => {
                 const runningStatus = flow.running_status || 'Stopped';
@@ -274,28 +272,20 @@ export function DevToolPage() {
                 return (
                   <TableRow 
                     key={flow.id} 
-                    className={`hover:bg-muted/30 transition-colors ${
-                      isDeployed ? 'bg-success/5' : 'bg-warning/5'
-                    }`}
+                    className="hover:bg-muted/20 transition-colors"
                   >
                     <TableCell className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                          <Workflow className="h-4 w-4 text-primary" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-foreground">{flow.name}</div>
-                          <div className="text-xs text-muted-foreground">ID: {flow.id}</div>
-                        </div>
+                      <div>
+                        <div className="font-medium text-foreground">{flow.name}</div>
                       </div>
                     </TableCell>
                     <TableCell className="px-6 py-4">
                       <Badge 
                         variant="outline"
-                        className={`text-xs font-medium border-0 ${
-                          runningStatus === 'Running' ? 'bg-success text-success-foreground' :
-                          runningStatus === 'Partial' ? 'bg-warning text-warning-foreground' :
-                          'bg-destructive text-destructive-foreground'
+                        className={`text-xs font-medium ${
+                          runningStatus === 'Running' ? 'bg-green-500 text-white border-green-500' :
+                          runningStatus === 'Partial' ? 'bg-yellow-500 text-white border-yellow-500' :
+                          'bg-red-500 text-white border-red-500'
                         }`}
                       >
                         {runningStatus}
@@ -304,8 +294,8 @@ export function DevToolPage() {
                     <TableCell className="px-6 py-4">
                       <Badge 
                         variant="outline"
-                        className={`text-xs font-medium border-0 ${
-                          isDeployed ? 'bg-success text-success-foreground' : 'bg-warning text-warning-foreground'
+                        className={`text-xs font-medium ${
+                          isDeployed ? 'bg-green-500 text-white border-green-500' : 'bg-yellow-500 text-white border-yellow-500'
                         }`}
                       >
                         {isDeployed ? "Deployed" : "Draft"}
@@ -329,34 +319,34 @@ export function DevToolPage() {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 w-8 p-0" 
+                          className="h-8 px-2" 
                           onClick={() => navigate(`/flows/${flow.id}`)}
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 w-8 p-0" 
+                          className="h-8 px-2" 
                           onClick={() => handleExportFlow(flow)}
                         >
-                          <Download className="h-4 w-4" />
+                          <Download className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 w-8 p-0" 
+                          className="h-8 px-2" 
                           onClick={() => handleCloneFlow(flow)}
                         >
-                          <Copy className="h-4 w-4" />
+                          <Copy className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive" 
+                          className="h-8 px-2 text-destructive hover:text-destructive" 
                           onClick={() => handleDeleteFlow(flow.id)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     </TableCell>
@@ -408,7 +398,6 @@ export function DevToolPage() {
               <TableRow>
                 <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                   <div className="flex flex-col items-center gap-2">
-                    <Network className="h-8 w-8 text-muted-foreground/50" />
                     <span className="text-sm">No nodes found</span>
                   </div>
                 </TableCell>
@@ -420,26 +409,18 @@ export function DevToolPage() {
                 return (
                   <TableRow 
                     key={node.id} 
-                    className={`hover:bg-muted/30 transition-colors ${
-                      isDeployed ? 'bg-success/5' : 'bg-warning/5'
-                    }`}
+                    className="hover:bg-muted/20 transition-colors"
                   >
                     <TableCell className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
-                          <Network className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-foreground">{node.name}</div>
-                          <div className="text-xs text-muted-foreground">ID: {node.id}</div>
-                        </div>
+                      <div>
+                        <div className="font-medium text-foreground">{node.name}</div>
                       </div>
                     </TableCell>
                     <TableCell className="px-6 py-4">
                       <Badge 
                         variant="outline"
-                        className={`text-xs font-medium border-0 ${
-                          isDeployed ? 'bg-success text-success-foreground' : 'bg-warning text-warning-foreground'
+                        className={`text-xs font-medium ${
+                          isDeployed ? 'bg-green-500 text-white border-green-500' : 'bg-yellow-500 text-white border-yellow-500'
                         }`}
                       >
                         {isDeployed ? "Deployed" : "Draft"}
@@ -469,33 +450,33 @@ export function DevToolPage() {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 w-8 p-0" 
+                          className="h-8 px-2" 
                           onClick={() => navigate(`/nodes/${node.id}`)}
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 w-8 p-0" 
+                          className="h-8 px-2" 
                           onClick={() => handleExportNode(node)}
                         >
-                          <Download className="h-4 w-4" />
+                          <Download className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 w-8 p-0"
+                          className="h-8 px-2"
                         >
-                          <Copy className="h-4 w-4" />
+                          <Copy className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive" 
+                          className="h-8 px-2 text-destructive hover:text-destructive" 
                           onClick={() => handleDeleteNode(node.id)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     </TableCell>
@@ -541,7 +522,6 @@ export function DevToolPage() {
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                   <div className="flex flex-col items-center gap-2">
-                    <GitFork className="h-8 w-8 text-muted-foreground/50" />
                     <span className="text-sm">No subnodes found</span>
                   </div>
                 </TableCell>
@@ -554,26 +534,18 @@ export function DevToolPage() {
                 return (
                   <TableRow 
                     key={subnode.id} 
-                    className={`hover:bg-muted/30 transition-colors ${
-                      isActive && !isDraft ? 'bg-success/5' : 'bg-warning/5'
-                    }`}
+                    className="hover:bg-muted/20 transition-colors"
                   >
                     <TableCell className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10">
-                          <GitFork className="h-4 w-4 text-orange-600" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-foreground">{subnode.name}</div>
-                          <div className="text-xs text-muted-foreground">ID: {subnode.id}</div>
-                        </div>
+                      <div>
+                        <div className="font-medium text-foreground">{subnode.name}</div>
                       </div>
                     </TableCell>
                     <TableCell className="px-6 py-4">
                       <Badge 
                         variant="outline"
-                        className={`text-xs font-medium border-0 ${
-                          isActive && !isDraft ? 'bg-success text-success-foreground' : 'bg-warning text-warning-foreground'
+                        className={`text-xs font-medium ${
+                          isActive && !isDraft ? 'bg-green-500 text-white border-green-500' : 'bg-yellow-500 text-white border-yellow-500'
                         }`}
                       >
                         {isActive && !isDraft ? "Active" : "Draft"}
@@ -597,33 +569,33 @@ export function DevToolPage() {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 w-8 p-0" 
+                          className="h-8 px-2" 
                           onClick={() => navigate(`/subnodes/${subnode.id}`)}
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 w-8 p-0" 
+                          className="h-8 px-2" 
                           onClick={() => handleExportSubnode(subnode)}
                         >
-                          <Download className="h-4 w-4" />
+                          <Download className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 w-8 p-0"
+                          className="h-8 px-2"
                         >
-                          <Copy className="h-4 w-4" />
+                          <Copy className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive" 
+                          className="h-8 px-2 text-destructive hover:text-destructive" 
                           onClick={() => handleDeleteSubnode(subnode.id)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     </TableCell>
@@ -669,7 +641,6 @@ export function DevToolPage() {
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                   <div className="flex flex-col items-center gap-2">
-                    <Settings className="h-8 w-8 text-muted-foreground/50" />
                     <span className="text-sm">No parameters found</span>
                   </div>
                 </TableCell>
@@ -682,19 +653,11 @@ export function DevToolPage() {
                 return (
                   <TableRow 
                     key={param.id} 
-                    className={`hover:bg-muted/30 transition-colors ${
-                      isActive && !isDraft ? 'bg-success/5' : 'bg-warning/5'
-                    }`}
+                    className="hover:bg-muted/20 transition-colors"
                   >
                     <TableCell className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10">
-                          <Settings className="h-4 w-4 text-green-600" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-foreground">{param.key}</div>
-                          <div className="text-xs text-muted-foreground">ID: {param.id}</div>
-                        </div>
+                      <div>
+                        <div className="font-medium text-foreground">{param.key}</div>
                       </div>
                     </TableCell>
                     <TableCell className="px-6 py-4">
@@ -707,8 +670,8 @@ export function DevToolPage() {
                     <TableCell className="px-6 py-4">
                       <Badge 
                         variant="outline"
-                        className={`text-xs font-medium border-0 ${
-                          isActive && !isDraft ? 'bg-success text-success-foreground' : 'bg-warning text-warning-foreground'
+                        className={`text-xs font-medium ${
+                          isActive && !isDraft ? 'bg-green-500 text-white border-green-500' : 'bg-yellow-500 text-white border-yellow-500'
                         }`}
                       >
                         {isActive && !isDraft ? "Active" : "Draft"}
@@ -729,33 +692,33 @@ export function DevToolPage() {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 w-8 p-0" 
+                          className="h-8 px-2" 
                           onClick={() => navigate(`/parameters/${param.id}`)}
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 w-8 p-0" 
+                          className="h-8 px-2" 
                           onClick={() => handleExportParameter(param.id)}
                         >
-                          <Download className="h-4 w-4" />
+                          <Download className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 w-8 p-0"
+                          className="h-8 px-2"
                         >
-                          <Copy className="h-4 w-4" />
+                          <Copy className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive" 
+                          className="h-8 px-2 text-destructive hover:text-destructive" 
                           onClick={() => handleDeleteParameter(param.id)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     </TableCell>
@@ -935,9 +898,46 @@ export function DevToolPage() {
     }
   };
 
+  // Git info state and handlers
+  const [gitInfo, setGitInfo] = useState<GitInfo | null>(null);
+  const [gitLoading, setGitLoading] = useState(false);
+
+  const fetchLatestGit = async () => {
+    try {
+      setGitLoading(true);
+      const info = await gitService.getLatestCommit();
+      setGitInfo(info);
+    } catch (error) {
+      toast({
+        title: "Git fetch failed",
+        description: "Could not retrieve latest commit.",
+        variant: "destructive",
+      });
+    } finally {
+      setGitLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void fetchLatestGit();
+  }, []);
+
+  // Auto-refresh git info every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!gitLoading) {
+        void fetchLatestGit();
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [gitLoading]);
+
   return (
     <div className="min-h-screen bg-background">
       <div className="w-full p-6 space-y-8">
+
+
         {/* Professional Tabs */}
         <div className="bg-card border border-border rounded-lg shadow-sm">
           <Tabs defaultValue="flows" className="w-full">
@@ -947,28 +947,24 @@ export function DevToolPage() {
                   value="flows" 
                   className="flex items-center gap-2 h-12 px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
                 >
-                  <Workflow className="h-4 w-4" />
                   <span className="font-medium">Flows</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="nodes" 
                   className="flex items-center gap-2 h-12 px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
                 >
-                  <Network className="h-4 w-4" />
                   <span className="font-medium">Nodes</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="subnodes" 
                   className="flex items-center gap-2 h-12 px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
                 >
-                  <GitFork className="h-4 w-4" />
                   <span className="font-medium">Subnodes</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="parameters" 
                   className="flex items-center gap-2 h-12 px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
                 >
-                  <Settings className="h-4 w-4" />
                   <span className="font-medium">Parameters</span>
                 </TabsTrigger>
               </TabsList>

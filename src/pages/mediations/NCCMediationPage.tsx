@@ -1,20 +1,8 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock, 
-  Monitor,
-  RefreshCw,
-  Bell,
-  Play,
-  Square,
-  AlertCircle,
-  Info,
-  Phone
-} from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const nccStreams = [
@@ -69,15 +57,6 @@ export function NCCMediationPage() {
     setRefreshing(false);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "RUNNING": return "text-success";
-      case "PARTIAL": return "text-warning";
-      case "STOPPED": return "text-muted-foreground";
-      default: return "text-muted-foreground";
-    }
-  };
-
   const getStatusBadge = (status: string) => {
     const variant = status === "RUNNING" ? "default" :
                    status === "PARTIAL" ? "secondary" : 
@@ -91,27 +70,19 @@ export function NCCMediationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="min-h-screen bg-background">
       <div className="space-y-6 p-6">
-        {/* Dashboard Header */}
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary-glow/5 rounded-2xl" />
-          <div className="relative bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-card">
+        {/* Header */}
+        <Card className="border border-border bg-card">
+          <CardContent className="p-6">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Phone className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-                      NCC Mediation
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                      Real-time monitoring of network call control streams
-                    </p>
-                  </div>
-                </div>
+                <h1 className="text-2xl font-bold text-foreground">
+                  NCC Mediation
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Real-time monitoring of network call control streams
+                </p>
               </div>
               
               <div className="flex flex-wrap items-center gap-2">
@@ -129,119 +100,77 @@ export function NCCMediationPage() {
                   <div className="text-xs text-muted-foreground">
                     {currentTime.toLocaleDateString()}
                   </div>
-                  <div className="text-sm font-bold text-primary">
+                  <div className="text-sm font-bold text-foreground">
                     {currentTime.toLocaleTimeString('en-US', { hour12: false })}
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-6">
-          <Card className="bg-success/5 border-success/20 shadow-subtle">
+          <Card className="border border-border bg-card">
             <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-success/10 rounded-lg">
-                  <Play className="h-5 w-5 text-success" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-success">
-                    {nccStreams.filter(stream => stream.status === "RUNNING").length}
-                  </div>
-                  <div className="text-sm text-muted-foreground">All Running Streams</div>
-                </div>
+              <div className="text-2xl font-bold text-success">
+                {nccStreams.filter(stream => stream.status === "RUNNING").length}
               </div>
+              <div className="text-sm text-muted-foreground">Running Streams</div>
             </CardContent>
           </Card>
           
-          <Card className="bg-destructive/5 border-destructive/20 shadow-subtle">
+          <Card className="border border-border bg-card">
             <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-destructive/10 rounded-lg">
-                  <Square className="h-5 w-5 text-destructive" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-destructive">
-                    {nccStreams.filter(stream => stream.status === "STOPPED").length}
-                  </div>
-                  <div className="text-sm text-muted-foreground">All Stopped Streams</div>
-                </div>
+              <div className="text-2xl font-bold text-destructive">
+                {nccStreams.filter(stream => stream.status === "STOPPED").length}
               </div>
+              <div className="text-sm text-muted-foreground">Stopped Streams</div>
             </CardContent>
           </Card>
           
-          <Card className="bg-primary/5 border-primary/20 shadow-subtle">
+          <Card className="border border-border bg-card">
             <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Monitor className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-primary">
-                    {nccStreams.length}
-                  </div>
-                  <div className="text-sm text-muted-foreground">All Streams</div>
-                </div>
+              <div className="text-2xl font-bold text-foreground">
+                {nccStreams.length}
               </div>
+              <div className="text-sm text-muted-foreground">Total Streams</div>
             </CardContent>
           </Card>
 
-          <Card className="bg-destructive/5 border-destructive/20 shadow-subtle">
+          <Card className="border border-border bg-card">
             <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-destructive/10 rounded-lg">
-                  <AlertTriangle className="h-5 w-5 text-destructive" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-destructive">
-                    48
-                  </div>
-                  <div className="text-sm text-muted-foreground">Total Errors</div>
-                </div>
+              <div className="text-2xl font-bold text-destructive">
+                48
               </div>
+              <div className="text-sm text-muted-foreground">Total Errors</div>
             </CardContent>
           </Card>
 
-          <Card className="bg-warning/5 border-warning/20 shadow-subtle">
+          <Card className="border border-border bg-card">
             <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-warning/10 rounded-lg">
-                  <AlertCircle className="h-5 w-5 text-warning" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-warning">
-                    21
-                  </div>
-                  <div className="text-sm text-muted-foreground">Total Warnings</div>
-                </div>
+              <div className="text-2xl font-bold text-warning">
+                21
               </div>
+              <div className="text-sm text-muted-foreground">Total Warnings</div>
             </CardContent>
           </Card>
 
-          <Card className="bg-info/5 border-info/20 shadow-subtle">
+          <Card className="border border-border bg-card">
             <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-info/10 rounded-lg">
-                  <Info className="h-5 w-5 text-info" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-info">
-                    7
-                  </div>
-                  <div className="text-sm text-muted-foreground">Info Messages</div>
-                </div>
+              <div className="text-2xl font-bold text-info">
+                7
               </div>
+              <div className="text-sm text-muted-foreground">Info Messages</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Streams Table */}
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50 shadow-subtle">
+        <Card className="border border-border bg-card">
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <CardTitle className="text-lg font-semibold">Streams</CardTitle>
+              <CardTitle className="text-lg font-semibold text-foreground">Streams</CardTitle>
               <div className="flex flex-col sm:flex-row gap-2">
                 <div className="flex items-center gap-2">
                   <label htmlFor="status-filter" className="text-sm font-medium text-muted-foreground">
@@ -249,7 +178,7 @@ export function NCCMediationPage() {
                   </label>
                   <select 
                     id="status-filter"
-                    className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="h-9 border border-input bg-background px-3 py-1 text-sm text-foreground"
                     defaultValue="all"
                   >
                     <option value="all">All Status</option>
@@ -262,17 +191,17 @@ export function NCCMediationPage() {
                   <input
                     type="text"
                     placeholder="Search flows..."
-                    className="h-9 w-full sm:w-64 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="h-9 w-full sm:w-64 border border-input bg-background px-3 py-1 text-sm text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
               </div>
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-hidden rounded-lg border border-border">
+            <div className="overflow-hidden border border-border">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-muted/50 border-b border-border sticky top-0 z-10">
+                  <thead className="bg-muted/30 border-b border-border">
                     <tr>
                       <th className="text-left font-medium text-muted-foreground px-4 py-3">
                         Stream Name
@@ -318,7 +247,7 @@ export function NCCMediationPage() {
                         <td className="px-4 py-3">
                           {getStatusBadge(stream.status)}
                         </td>
-                        <td className="px-4 py-3 font-medium">
+                        <td className="px-4 py-3 font-medium text-foreground">
                           {stream.throughput}
                         </td>
                       </tr>
@@ -329,7 +258,7 @@ export function NCCMediationPage() {
             </div>
             <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/20">
               <div className="text-sm text-muted-foreground">
-                Showing 1 to {nccStreams.length} of {nccStreams.length} flows
+                Showing 1 to {nccStreams.length} of {nccStreams.length} streams
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" disabled>
