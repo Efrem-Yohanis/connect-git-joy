@@ -150,9 +150,7 @@ export function CollapsibleNodePalette({ onAddNode }: CollapsibleNodePaletteProp
   }
 
   return (
-    <div className={`bg-card border-r border-border transition-all duration-300 ${
-      isCollapsed ? 'w-12' : 'w-80'
-    }`}>
+    <div className="h-full flex flex-col">
       <div className="flex items-center justify-between p-4 border-b border-border">
         {!isCollapsed && (
           <div className="flex items-center gap-2">
@@ -175,7 +173,7 @@ export function CollapsibleNodePalette({ onAddNode }: CollapsibleNodePaletteProp
       </div>
       
       {!isCollapsed && (
-        <div className="p-4">
+        <div className="flex-1 p-4 overflow-hidden">
           {nodes.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-sm text-muted-foreground">
@@ -186,7 +184,7 @@ export function CollapsibleNodePalette({ onAddNode }: CollapsibleNodePaletteProp
               </p>
             </div>
           ) : (
-            <div className="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
+            <div className="space-y-3 h-full overflow-y-auto">
               {nodes.map((node) => {
                 const Icon = getNodeIcon(node.name);
                 const colorClass = getNodeColor(node.name);
@@ -194,23 +192,23 @@ export function CollapsibleNodePalette({ onAddNode }: CollapsibleNodePaletteProp
                 return (
                   <div
                     key={node.id}
-                    className="group border border-border rounded p-3 hover:bg-muted/50 transition-colors cursor-grab active:cursor-grabbing"
+                    className="group border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md"
                     draggable
                     onDragStart={(event) => {
                       event.dataTransfer.setData('application/reactflow', node.id);
                       event.dataTransfer.effectAllowed = 'move';
                     }}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-2 flex-1">
-                        <div className={`p-1.5 rounded ${colorClass} text-white flex-shrink-0`}>
-                          <Icon className="h-3 w-3" />
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className={`p-2 rounded-lg ${colorClass} text-white flex-shrink-0`}>
+                          <Icon className="h-4 w-4" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-foreground truncate">
+                          <h4 className="text-sm font-semibold text-foreground truncate">
                             {node.name}
                           </h4>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground mt-1">
                             v{node.version} • {node.versions?.length || 0} version{(node.versions?.length || 0) !== 1 ? 's' : ''}
                           </p>
                         </div>
@@ -219,10 +217,10 @@ export function CollapsibleNodePalette({ onAddNode }: CollapsibleNodePaletteProp
                         onClick={() => onAddNode(node.id)}
                         size="sm"
                         variant="ghost"
-                        className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary hover:text-primary-foreground"
                         title="Add to Canvas"
                       >
-                        <Plus className="h-3 w-3" />
+                        <Plus className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>

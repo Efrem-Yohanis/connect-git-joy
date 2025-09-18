@@ -24,7 +24,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 
 import { CollapsibleNodePalette } from './CollapsibleNodePalette';
 import { EnhancedFlowNode } from './EnhancedFlowNode';
-import { PropertiesPanel } from './PropertiesPanel';
+
 import { flowService, useFlow } from '@/services/flowService';
 import { nodeService } from '@/services/nodeService';
 
@@ -71,7 +71,6 @@ export function RealTimeFlowEditor({ flowId }: RealTimeFlowEditorProps) {
   
   // Panel collapse states
   const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
-  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false);
   
   // Real-time state
   const [flowNodeMap, setFlowNodeMap] = useState<Map<string, string>>(new Map()); // Canvas node ID -> FlowNode ID
@@ -543,7 +542,7 @@ export function RealTimeFlowEditor({ flowId }: RealTimeFlowEditorProps) {
 
       {/* Professional Main Content */}
       <div className="flex-1 overflow-hidden relative">
-        {/* Mobile Panel Toggle Buttons */}
+        {/* Mobile Panel Toggle Button */}
         <div className="lg:hidden absolute top-4 left-4 z-30 flex gap-2">
           <Button
             variant="outline"
@@ -553,41 +552,32 @@ export function RealTimeFlowEditor({ flowId }: RealTimeFlowEditorProps) {
           >
             <Database className="h-4 w-4" />
           </Button>
-          <Button
-            variant="outline" 
-            size="sm"
-            onClick={() => setIsRightPanelCollapsed(!isRightPanelCollapsed)}
-            className="bg-card/95 backdrop-blur-sm border-border/60 shadow-lg"
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
         </div>
 
         {/* Overlay for mobile panels */}
-        {(!isLeftPanelCollapsed || !isRightPanelCollapsed) && (
+        {!isLeftPanelCollapsed && (
           <div 
             className="lg:hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-10"
             onClick={() => {
               setIsLeftPanelCollapsed(true);
-              setIsRightPanelCollapsed(true);
             }}
           />
         )}
 
         <div className="h-full flex">
           {/* Left Sidebar - Node Palette */}
-          <div className={`transition-all duration-300 ${isLeftPanelCollapsed ? 'w-0 lg:w-12' : 'w-80'} lg:relative absolute lg:translate-x-0 ${isLeftPanelCollapsed ? '-translate-x-full lg:translate-x-0' : 'translate-x-0'} z-20 lg:z-0 h-full`}>
-            <div className="h-full bg-card/95 backdrop-blur-sm border-r border-border/60 shadow-lg lg:shadow-none">
-              <CollapsibleNodePalette onAddNode={() => {}} />
-            </div>
+          <div className={`transition-all duration-300 ${isLeftPanelCollapsed ? 'w-12' : 'w-96'} bg-card/95 backdrop-blur-sm border-r border-border/60 shadow-lg lg:shadow-none h-full`}>
+            <CollapsibleNodePalette onAddNode={(nodeId) => {
+              const position = { x: Math.random() * 300 + 200, y: Math.random() * 200 + 150 };
+              onDrop({ 
+                preventDefault: () => {},
+                dataTransfer: { getData: () => nodeId }
+              } as any);
+            }} />
           </div>
           
           {/* Center - Canvas */}
-          <div className={`flex-1 transition-all duration-300 ${
-            (!isLeftPanelCollapsed && !isRightPanelCollapsed) ? 'lg:mx-0 mx-80' : 
-            (!isLeftPanelCollapsed) ? 'lg:ml-0 ml-80 lg:mr-0 mr-0' :
-            (!isRightPanelCollapsed) ? 'lg:ml-0 ml-0 lg:mr-0 mr-80' : 'mx-0'
-          } lg:mx-0`}>
+          <div className="flex-1 transition-all duration-300">
             <div className="h-full relative">
               {/* Canvas Toolbar */}
               <div className="absolute top-4 left-4 z-10 flex items-center gap-3">
@@ -640,24 +630,6 @@ export function RealTimeFlowEditor({ flowId }: RealTimeFlowEditorProps) {
             </div>
           </div>
           
-          {/* Right Sidebar - Properties Panel */}
-          <div className={`transition-all duration-300 ${isRightPanelCollapsed ? 'w-12' : 'w-80'} lg:relative absolute right-0 lg:translate-x-0 ${isRightPanelCollapsed ? '' : 'translate-x-0'} z-20 lg:z-0`}>
-            <div className="h-full bg-card/50 backdrop-blur-sm border-l border-border/60">
-              <PropertiesPanel 
-                selectedNode={selectedNode}
-                onUpdateNode={(nodeId, data) => {
-                  setNodes(nds => nds.map(n => n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n));
-                }}
-                onDeleteNode={(nodeId) => {
-                  setNodes(nds => nds.filter(n => n.id !== nodeId));
-                  setEdges(eds => eds.filter(e => e.source !== nodeId && e.target !== nodeId));
-                }}
-                flowId={flowId}
-                isCollapsed={isRightPanelCollapsed}
-                onToggleCollapse={() => setIsRightPanelCollapsed(!isRightPanelCollapsed)}
-              />
-            </div>
-          </div>
         </div>
       </div>
     </div>
