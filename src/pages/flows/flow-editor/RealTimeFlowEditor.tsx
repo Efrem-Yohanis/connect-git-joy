@@ -567,13 +567,16 @@ export function RealTimeFlowEditor({ flowId }: RealTimeFlowEditorProps) {
         <div className="h-full flex">
           {/* Left Sidebar - Node Palette */}
           <div className={`transition-all duration-300 ${isLeftPanelCollapsed ? 'w-12' : 'w-96'} bg-card/95 backdrop-blur-sm border-r border-border/60 shadow-lg lg:shadow-none h-full`}>
-            <CollapsibleNodePalette onAddNode={(nodeId) => {
-              const position = { x: Math.random() * 300 + 200, y: Math.random() * 200 + 150 };
-              onDrop({ 
-                preventDefault: () => {},
-                dataTransfer: { getData: () => nodeId }
-              } as any);
-            }} />
+            <CollapsibleNodePalette 
+              onAddNode={async (nodeId) => {
+                const position = { x: Math.random() * 300 + 200, y: Math.random() * 200 + 150 };
+                const event = {
+                  preventDefault: () => {},
+                  dataTransfer: { getData: () => nodeId }
+                } as any;
+                await onDrop(event);
+              }} 
+            />
           </div>
           
           {/* Center - Canvas */}

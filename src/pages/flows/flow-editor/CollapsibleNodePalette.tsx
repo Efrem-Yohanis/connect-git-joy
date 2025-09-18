@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { nodeService } from '@/services/nodeService';
-import { useEffect } from 'react';
 import { 
   Database, 
   Filter, 
@@ -49,7 +48,7 @@ const getNodeColor = (nodeName?: string) => {
   if (name.includes('enrichment')) return 'bg-orange-500';
   if (name.includes('encoder')) return 'bg-teal-500';
   if (name.includes('diameter')) return 'bg-indigo-500';
-  if (name.includes('backup')) return 'bg-gray-500';
+  if (name.includes('backup') || name.includes('raw')) return 'bg-gray-500';
   return 'bg-blue-500';
 };
 
@@ -62,12 +61,14 @@ export function CollapsibleNodePalette({ onAddNode }: CollapsibleNodePaletteProp
   const fetchNodes = async () => {
     try {
       setLoading(true);
-      const nodeList = await nodeService.getAllNodes();
-      setNodes(nodeList);
       setError(null);
+      console.log('🔄 Fetching nodes...');
+      const nodeList = await nodeService.getAllNodes();
+      console.log('✅ Nodes fetched successfully:', nodeList);
+      setNodes(nodeList);
     } catch (err) {
+      console.error('❌ Error fetching nodes:', err);
       setError('Failed to load nodes');
-      console.error('Error fetching nodes:', err);
     } finally {
       setLoading(false);
     }
@@ -79,29 +80,29 @@ export function CollapsibleNodePalette({ onAddNode }: CollapsibleNodePaletteProp
 
   if (loading) {
     return (
-      <div className={`bg-card border-r border-border transition-all duration-300 ${
-        isCollapsed ? 'w-12' : 'w-80'
-      }`}>
-        <div className="flex items-center justify-between p-4 border-b border-border">
+      <div className="h-full flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b border-border bg-card/50 backdrop-blur-sm">
           {!isCollapsed && (
             <div className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              <h3 className="font-semibold">Available Nodes</h3>
+              <Database className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold text-foreground">Node Library</h3>
             </div>
           )}
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 hover:bg-primary/10"
+            title={isCollapsed ? "Expand Panel" : "Collapse Panel"}
           >
             {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
         </div>
         {!isCollapsed && (
-          <div className="p-4">
-            <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          <div className="flex-1 p-4 flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+              <p className="text-sm text-muted-foreground">Loading nodes...</p>
             </div>
           </div>
         )}
@@ -111,38 +112,37 @@ export function CollapsibleNodePalette({ onAddNode }: CollapsibleNodePaletteProp
 
   if (error) {
     return (
-      <div className={`bg-card border-r border-border transition-all duration-300 ${
-        isCollapsed ? 'w-12' : 'w-80'
-      }`}>
-        <div className="flex items-center justify-between p-4 border-b border-border">
+      <div className="h-full flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b border-border bg-card/50 backdrop-blur-sm">
           {!isCollapsed && (
             <div className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              <h3 className="font-semibold">Available Nodes</h3>
+              <Database className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold text-foreground">Node Library</h3>
             </div>
           )}
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 hover:bg-primary/10"
+            title={isCollapsed ? "Expand Panel" : "Collapse Panel"}
           >
             {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
         </div>
         {!isCollapsed && (
-          <div className="p-4">
-            <div className="text-center space-y-2">
-              <p className="text-sm text-destructive">{error}</p>
-              <Button 
-                onClick={fetchNodes} 
-                size="sm" 
-                variant="outline"
-                className="text-xs"
-              >
-                Retry
-              </Button>
-            </div>
+          <div className="flex-1 p-4 flex flex-col items-center justify-center">
+            <AlertCircle className="h-8 w-8 text-destructive mb-2" />
+            <p className="text-sm text-destructive mb-3 text-center">{error}</p>
+            <Button 
+              onClick={fetchNodes} 
+              size="sm" 
+              variant="outline"
+              className="text-xs"
+            >
+              <RotateCcw className="h-3 w-3 mr-1" />
+              Retry
+            </Button>
           </div>
         )}
       </div>
@@ -151,12 +151,13 @@ export function CollapsibleNodePalette({ onAddNode }: CollapsibleNodePaletteProp
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between p-4 border-b border-border">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-border bg-card/50 backdrop-blur-sm">
         {!isCollapsed && (
           <div className="flex items-center gap-2">
-            <Database className="h-5 w-5" />
-            <h3 className="font-semibold">Available Nodes</h3>
-            <Badge variant="secondary" className="ml-auto">
+            <Database className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold text-foreground">Node Library</h3>
+            <Badge variant="secondary" className="ml-auto bg-primary/10 text-primary border-primary/20">
               {nodes.length}
             </Badge>
           </div>
@@ -165,21 +166,23 @@ export function CollapsibleNodePalette({ onAddNode }: CollapsibleNodePaletteProp
           variant="ghost"
           size="sm"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 hover:bg-primary/10"
           title={isCollapsed ? "Expand Panel" : "Collapse Panel"}
         >
           {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
       </div>
       
+      {/* Content */}
       {!isCollapsed && (
         <div className="flex-1 p-4 overflow-hidden">
           {nodes.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-sm text-muted-foreground">
+            <div className="text-center py-12">
+              <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-sm text-muted-foreground mb-2">
                 No nodes available
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground">
                 Create and deploy some nodes first to use them in flows
               </p>
             </div>
@@ -192,7 +195,7 @@ export function CollapsibleNodePalette({ onAddNode }: CollapsibleNodePaletteProp
                 return (
                   <div
                     key={node.id}
-                    className="group border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md"
+                    className="group border border-border rounded-xl p-4 hover:bg-muted/30 hover:border-primary/30 transition-all duration-200 cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md bg-card/30 backdrop-blur-sm"
                     draggable
                     onDragStart={(event) => {
                       event.dataTransfer.setData('application/reactflow', node.id);
@@ -201,20 +204,33 @@ export function CollapsibleNodePalette({ onAddNode }: CollapsibleNodePaletteProp
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3 flex-1">
-                        <div className={`p-2 rounded-lg ${colorClass} text-white flex-shrink-0`}>
+                        <div className={`p-2.5 rounded-lg ${colorClass} text-white flex-shrink-0 shadow-sm`}>
                           <Icon className="h-4 w-4" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-semibold text-foreground truncate">
+                          <h4 className="text-sm font-semibold text-foreground truncate mb-1">
                             {node.name}
                           </h4>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            v{node.version} • {node.versions?.length || 0} version{(node.versions?.length || 0) !== 1 ? 's' : ''}
-                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>v{node.published_version?.version || node.versions?.[0]?.version || 1}</span>
+                            <span>•</span>
+                            <span>{node.versions?.length || 0} version{(node.versions?.length || 0) !== 1 ? 's' : ''}</span>
+                            {node.is_deployed && (
+                              <>
+                                <span>•</span>
+                                <Badge variant="outline" className="text-xs h-4 px-1 bg-success/10 text-success border-success/20">
+                                  Deployed
+                                </Badge>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <Button
-                        onClick={() => onAddNode(node.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAddNode(node.id);
+                        }}
                         size="sm"
                         variant="ghost"
                         className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary hover:text-primary-foreground"
