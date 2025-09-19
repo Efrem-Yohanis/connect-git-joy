@@ -23,7 +23,6 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useSubnodes, subnodeService } from "@/services/subnodeService";
 import { toast } from "sonner";
-import { useSection } from "@/contexts/SectionContext";
 import { LoadingCard } from "@/components/ui/loading";
 
 export function SubnodesPage() {
@@ -33,18 +32,6 @@ export function SubnodesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const navigate = useNavigate();
-  const { setStatusCounts } = useSection();
-
-  // Update stats when data changes
-  useEffect(() => {
-    if (subnodesData) {
-      setStatusCounts({
-        total: subnodesData.total,
-        deployed: subnodesData.published,
-        drafted: subnodesData.draft
-      });
-    }
-  }, [subnodesData, setStatusCounts]);
 
   const subnodes = subnodesData?.results || [];
 

@@ -122,15 +122,11 @@ export function CreateNodePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Create New Node</h1>
-      </div>
-
+    <div className="w-full space-y-6">
       {/* Node Information */}
-      <Card>
+      <Card className="w-full">
         <CardHeader>
-          <CardTitle>Node Information</CardTitle>
+          <CardTitle className="text-2xl font-bold">Create New Node</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -223,17 +219,22 @@ export function CreateNodePage() {
               </p>
             )}
           </div>
+          {/* Action Buttons */}
+          <div className="flex items-center justify-end space-x-4 pt-6 border-t">
+            <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={isLoading}>
+              {isLoading ? "Creating..." : "Save"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
-
-      {/* Action Buttons */}
-      <div className="flex items-center justify-end space-x-4">
-        <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
-          Cancel
-        </Button>
-        <Button onClick={handleSave} disabled={isLoading}>
-          {isLoading ? "Creating..." : "Save Node"}
+      {/* Back Button */}
+      <div className="flex justify-center">
+        <Button variant="ghost" onClick={() => navigate("/devtool")}>
+          Back to DevTool
         </Button>
       </div>
     </div>

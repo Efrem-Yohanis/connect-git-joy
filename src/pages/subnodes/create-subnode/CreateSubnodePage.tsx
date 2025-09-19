@@ -99,27 +99,11 @@ export function CreateSubnodePage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button variant="outline" size="sm" onClick={handleCancel}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Create New Subnode</h1>
-            <p className="text-muted-foreground">
-              Create a new subnode and configure its parameters
-            </p>
-          </div>
-        </div>
-      </div>
-
+    <div className="w-full space-y-6">
       {/* Subnode Information */}
-      <Card>
+      <Card className="w-full">
         <CardHeader>
-          <CardTitle>Subnode Information</CardTitle>
+          <CardTitle className="text-2xl font-bold">Create New Subnode</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {nodesError && (
@@ -170,19 +154,25 @@ export function CreateSubnodePage() {
               rows={3}
             />
           </div>
+          {/* Action Buttons */}
+          <div className="flex items-center justify-end space-x-4 pt-6 border-t">
+            <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSave} 
+              disabled={!formData.node_family || isSubmitting || nodesLoading}
+            >
+              {isSubmitting ? "Creating..." : "Save"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Action Buttons */}
-      <div className="flex justify-end space-x-2">
-        <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
-          Cancel
-        </Button>
-        <Button 
-          onClick={handleSave} 
-          disabled={!formData.node_family || isSubmitting || nodesLoading}
-        >
-          {isSubmitting ? "Creating..." : "Create Subnode"}
+      {/* Back Button */}
+      <div className="flex justify-center">
+        <Button variant="ghost" onClick={() => navigate("/devtool")}>
+          Back to DevTool
         </Button>
       </div>
     </div>

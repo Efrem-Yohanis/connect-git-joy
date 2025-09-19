@@ -168,24 +168,9 @@ export function StreamDetailPage() {
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/dashboard")}
-                className="gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
-              </Button>
-              
-              <div className="space-y-1">
-                <div className="text-xs text-muted-foreground">
-                  Dashboard → Streams → {streamData.name}
-                </div>
-                <h1 className="text-2xl font-bold text-foreground">
-                  {streamData.name}
-                </h1>
-              </div>
+              <h1 className="text-2xl font-bold text-foreground">
+                {streamData.name}
+              </h1>
             </div>
           </div>
         </div>
@@ -562,6 +547,16 @@ export function StreamDetailPage() {
             </Card>
           </TabsContent>
         </Tabs>
+      </div>
+      
+      {/* Fixed Back Button at Bottom Right */}
+      <div className="fixed bottom-6 right-6">
+        <Button
+          onClick={() => navigate("/dashboard")}
+          className="bg-success hover:bg-success/90 text-white"
+        >
+          Back
+        </Button>
       </div>
     </div>
   );

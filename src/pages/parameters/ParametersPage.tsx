@@ -24,7 +24,6 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useParametersWithMetadata, parameterService } from "@/services/parameterService";
 import { useToast } from "@/hooks/use-toast";
-import { useSection } from "@/contexts/SectionContext";
 import { LoadingCard } from "@/components/ui/loading";
 
 export function ParametersPage() {
@@ -33,7 +32,6 @@ export function ParametersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const { toast } = useToast();
-  const { setCurrentSection, setStatusCounts } = useSection();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   
@@ -43,17 +41,7 @@ export function ParametersPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Extract parameters array from response
-  const parameters = parametersResponse.results || [];
-
-  // Update section context when data changes
-  useEffect(() => {
-    setCurrentSection("Parameters");
-    setStatusCounts({
-      total: parametersResponse.total,
-      deployed: parametersResponse.published,
-      drafted: parametersResponse.draft_count
-    });
-  }, [parametersResponse, setCurrentSection, setStatusCounts]);
+  const parameters = Array.isArray(parametersResponse?.results) ? parametersResponse.results : [];
 
   const filteredParameters = (Array.isArray(parameters) ? parameters : []).filter(param =>
     param.key.toLowerCase().includes(searchTerm.toLowerCase())

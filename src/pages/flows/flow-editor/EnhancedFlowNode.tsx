@@ -72,8 +72,9 @@ export const EnhancedFlowNode = memo(({ data, selected, id }: EnhancedFlowNodePr
   const nodeStatus = "Active"; // This could be "Active" or "Drafted"
   
   const handleSubnodeChange = (subnodeId: string) => {
+    const key = data.flowNodeId || id;
     if (data.onSubnodeChange) {
-      data.onSubnodeChange(id, subnodeId);
+      data.onSubnodeChange(key, subnodeId);
     }
   };
 

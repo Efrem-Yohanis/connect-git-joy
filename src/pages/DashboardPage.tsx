@@ -95,43 +95,6 @@ export function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="space-y-6 p-6">
-        {/* Dashboard Header */}
-        <Card className="border border-border bg-card">
-          <CardContent className="p-6">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="space-y-2">
-                <h1 className="text-2xl font-bold text-foreground">
-                  Dashboard
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  System overview and monitoring
-                </p>
-              </div>
-              
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRefresh}
-                  disabled={refreshing}
-                  className="h-9"
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
-                <div className="flex flex-col items-end gap-1 ml-4">
-                  <div className="text-xs text-muted-foreground">
-                    {currentTime.toLocaleDateString()}
-                  </div>
-                  <div className="text-sm font-bold text-foreground">
-                    {currentTime.toLocaleTimeString('en-US', { hour12: false })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-6">
           <Card className="border border-border bg-card">

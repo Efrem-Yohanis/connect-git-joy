@@ -40,10 +40,11 @@ interface NodeData extends Record<string, unknown> {
 interface SimplifiedNodeProps {
   data: NodeData;
   id: string;
+  onSubnodeChange?: (nodeId: string, subnodeId: string) => void;
 }
 
 // Simplified node component
-const SimplifiedNode = ({ data, id }: SimplifiedNodeProps) => {
+const SimplifiedNode = ({ data, id, onSubnodeChange }: SimplifiedNodeProps) => {
   const [subnodes, setSubnodes] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(false);
 
@@ -97,8 +98,9 @@ const SimplifiedNode = ({ data, id }: SimplifiedNodeProps) => {
             <Select
               value={data.selectedSubnode || ""}
               onValueChange={(value) => {
-                // This would trigger an update in the parent component
-                console.log('Subnode selected:', value);
+                if (onSubnodeChange) {
+                  onSubnodeChange(id, value);
+                }
               }}
             >
               <SelectTrigger className="h-8 text-xs">
@@ -136,6 +138,30 @@ export function FlowEditor() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [flowNodeMap, setFlowNodeMap] = useState<Map<string, string>>(new Map());
+
+  // Handle subnode selection change
+  const handleSubnodeChange = useCallback((nodeId: string, subnodeId: string) => {
+    setNodes((nodes) =>
+      nodes.map((node) =>
+        node.id === nodeId
+          ? { ...node, data: { ...node.data, selectedSubnode: subnodeId } }
+          : node
+      )
+    );
+    
+    // Update via API if we have a flow node mapping
+    const flowNodeId = flowNodeMap.get(nodeId);
+    if (flowNodeId && flowId) {
+      flowService.setFlowNodeSubnode(flowNodeId, subnodeId)
+        .then(() => {
+          toast.success('Subnode updated successfully');
+        })
+        .catch((error) => {
+          console.error('Error updating subnode:', error);
+          toast.error('Failed to update subnode');
+        });
+    }
+  }, [setNodes, flowNodeMap, flowId]);
 
   // Update flow data when loaded from API
   useEffect(() => {
@@ -315,8 +341,8 @@ export function FlowEditor() {
   };
 
   const nodeTypes = useMemo(() => ({
-    simplified: SimplifiedNode,
-  }), []);
+    simplified: (props: any) => <SimplifiedNode {...props} onSubnodeChange={handleSubnodeChange} />,
+  }), [handleSubnodeChange]);
 
   if (flowLoading) {
     return (
@@ -338,9 +364,12 @@ export function FlowEditor() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Flows
           </Button>
-          <h1 className="text-xl font-semibold">
-            {flowData?.name || 'Flow Editor'}
-          </h1>
+          <div className="flex flex-col">
+            <h1 className="text-xl font-semibold">
+              {flowData?.name || 'Flow Editor'}
+            </h1>
+            <p className="text-sm text-muted-foreground">v1.0 Editing Mode</p>
+          </div>
         </div>
         
         <Button onClick={saveFlow} className="flex items-center gap-2">

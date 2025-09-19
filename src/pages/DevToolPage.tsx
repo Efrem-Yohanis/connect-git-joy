@@ -36,7 +36,6 @@ import { CloneFlowDialog } from "@/pages/flows/clone-flow-dialog";
 import { useSubnodes, subnodeService } from "@/services/subnodeService";
 import { parameterService } from "@/services/parameterService";
 import { LoadingCard } from "@/components/ui/loading";
-import { useSection } from "@/contexts/SectionContext";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import axios from "axios";
 import { gitService, type GitInfo } from "@/services/gitService";
@@ -44,13 +43,6 @@ import { gitService, type GitInfo } from "@/services/gitService";
 export function DevToolPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { setCurrentSection, setStatusCounts } = useSection();
-
-  // Set section context for DevTool page
-  useEffect(() => {
-    setCurrentSection("Development Tools");
-    setStatusCounts({ total: 0, deployed: 0, drafted: 0 }); // Hide status counts
-  }, [setCurrentSection, setStatusCounts]);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState<{[key: string]: number}>({

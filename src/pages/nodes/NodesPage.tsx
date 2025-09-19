@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { useSection } from "@/contexts/SectionContext";
 import axios from "axios";
 
 interface NodeFamily {
@@ -91,7 +90,6 @@ export function NodesPage() {
   const [pageSize, setPageSize] = useState(10);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { setStatusCounts } = useSection();
 
   useEffect(() => {
     fetchNodes();
@@ -107,12 +105,6 @@ export function NodesPage() {
       const data = response.data;
       if (data && Array.isArray(data.results)) {
         setNodes(data.results);
-        // Update the header statistics
-        setStatusCounts({
-          total: data.total || 0,
-          deployed: data.published || 0,
-          drafted: data.draft || 0
-        });
       } else {
         console.error("API response does not contain results array:", data);
         setNodes([]);
