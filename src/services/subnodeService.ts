@@ -250,7 +250,7 @@ export const subnodeService = {
       version_comment: versionData.version_comment || '',
       is_deployed: versionData.is_deployed,
       is_editable: versionData.is_editable,
-      parameter_values: versionData.parameter_values
+      parameter_values: versionData.parameter_values || []
     };
   },
 };

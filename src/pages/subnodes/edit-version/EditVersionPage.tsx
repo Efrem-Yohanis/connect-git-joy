@@ -48,7 +48,7 @@ export function EditVersionPage() {
         setLoading(true);
         const detail = await subnodeService.getVersionDetail(id, versionNumber);
         setVersionDetail(detail);
-        setParameterValues(detail.parameter_values);
+        setParameterValues(detail.parameter_values || []);
       } catch (error) {
         toast.error("Failed to load version details");
         console.error("Load version error:", error);
@@ -179,7 +179,7 @@ export function EditVersionPage() {
           <CardTitle>Parameter Values</CardTitle>
         </CardHeader>
         <CardContent>
-          {parameterValues.length === 0 ? (
+          {!parameterValues || parameterValues.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               No parameters defined for this subnode.
             </p>
