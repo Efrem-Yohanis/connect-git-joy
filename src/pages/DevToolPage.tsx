@@ -7,12 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { 
-  Plus, 
-  Upload, 
-  Download, 
-  Trash2, 
-  Copy, 
+import {
+  Plus,
+  Upload,
+  Download,
+  Trash2,
+  Copy,
   Settings,
   Workflow,
   Network,
@@ -25,7 +25,11 @@ import {
   ChevronRight,
   RefreshCcw,
   ExternalLink,
-  GitCommit
+  GitCommit,
+  Activity,
+  TrendingUp,
+  Users,
+  Clock
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -76,6 +80,10 @@ export function DevToolPage() {
   const [parameters, setParameters] = useState<any[]>([]);
   const [parametersLoading, setParametersLoading] = useState(true);
 
+  // Git state
+  const [gitInfo, setGitInfo] = useState<GitInfo | null>(null);
+  const [gitLoading, setGitLoading] = useState(false);
+
   // Helper functions
   const getPaginatedItems = (items: any[], category: string) => {
     const start = (currentPage[category] - 1) * itemsPerPage[category];
@@ -95,6 +103,184 @@ export function DevToolPage() {
     setItemsPerPage(prev => ({ ...prev, [category]: newItemsPerPage }));
     setCurrentPage(prev => ({ ...prev, [category]: 1 })); // Reset to first page
   };
+
+  // Flow handlers
+  const handleDeleteFlow = async (flowId: string) => {
+    try {
+      await deleteItem(flowId);
+      setFlows(flows.filter(flow => flow.id !== flowId));
+      toast({
+        title: "Success",
+        description: "Flow deleted successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete flow",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleExportFlow = (flow: any) => {
+    const dataStr = JSON.stringify(flow, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${flow.name || 'flow'}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCloneFlow = (flow: any) => {
+    setFlowToClone(flow);
+    setShowCloneFlowDialog(true);
+  };
+
+  // Node handlers
+  const handleDeleteNode = async (nodeId: string) => {
+    try {
+      await deleteItem(nodeId);
+      setNodes(nodes.filter(node => node.id !== nodeId));
+      toast({
+        title: "Success",
+        description: "Node deleted successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete node",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleExportNode = (node: any) => {
+    const dataStr = JSON.stringify(node, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${node.name || 'node'}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Subnode handlers
+  const handleDeleteSubnode = async (subnodeId: string) => {
+    try {
+      await subnodeService.deleteSubnode(subnodeId);
+      refetchSubnodes();
+      toast({
+        title: "Success",
+        description: "Subnode deleted successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete subnode",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleExportSubnode = (subnode: any) => {
+    const dataStr = JSON.stringify(subnode, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${subnode.name || 'subnode'}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Parameter handlers
+  const handleDeleteParameter = async (parameterId: string) => {
+    try {
+      await parameterService.deleteParameter(parameterId);
+      setParameters(parameters.filter(param => param.id !== parameterId));
+      toast({
+        title: "Success",
+        description: "Parameter deleted successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete parameter",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleExportParameter = (parameter: any) => {
+    const dataStr = JSON.stringify(parameter, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${parameter.name || 'parameter'}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Git functions
+  const fetchGitInfo = async () => {
+    setGitLoading(true);
+    try {
+      const info = await gitService.getCurrentBranch();
+      setGitInfo({ currentBranch: info, totalCommits: 0, recentCommits: [] });
+    } catch (error) {
+      console.error('Failed to fetch git info:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch git information",
+        variant: "destructive"
+      });
+    } finally {
+      setGitLoading(false);
+    }
+  };
+
+  // Effects
+  useEffect(() => {
+    if (flowsData) {
+      setFlows(flowsData);
+    }
+  }, [flowsData]);
+
+  useEffect(() => {
+    const fetchNodes = async () => {
+      try {
+        const response = await axios.get('/api/nodes');
+        setNodes(response.data || []);
+      } catch (error) {
+        console.error('Failed to fetch nodes:', error);
+        setNodes([]);
+      } finally {
+        setNodesLoading(false);
+      }
+    };
+
+    fetchNodes();
+  }, []);
+
+  useEffect(() => {
+    const fetchParameters = async () => {
+      try {
+        const response = await parameterService.getParameters();
+        setParameters(response || []);
+      } catch (error) {
+        console.error('Failed to fetch parameters:', error);
+        setParameters([]);
+      } finally {
+        setParametersLoading(false);
+      }
+    };
+
+    fetchParameters();
+  }, []);
 
   // Render pagination component
   const renderPagination = (category: string, totalItems: number) => {
@@ -117,7 +303,7 @@ export function DevToolPage() {
     const pageNumbers = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
 
     return (
-      <div className="flex items-center justify-between px-2 py-4 border-t border-border bg-muted/20">
+      <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted/10">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Items per page:</span>
@@ -125,7 +311,7 @@ export function DevToolPage() {
               value={itemsPerPageValue.toString()} 
               onValueChange={(value) => handleItemsPerPageChange(category, parseInt(value))}
             >
-              <SelectTrigger className="w-20">
+              <SelectTrigger className="w-20 h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -222,7 +408,7 @@ export function DevToolPage() {
   // Professional table renders
   const renderFlowsList = (flows: any[], totalCount: number) => (
     <div className="space-y-4">
-      <div className="overflow-hidden border border-border rounded-lg bg-card">
+      <div className="overflow-hidden border border-border rounded-lg bg-card shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="border-b border-border bg-muted/30">
@@ -275,9 +461,9 @@ export function DevToolPage() {
                       <Badge 
                         variant="outline"
                         className={`text-xs font-medium ${
-                          runningStatus === 'Running' ? 'bg-green-500 text-white border-green-500' :
-                          runningStatus === 'Partial' ? 'bg-yellow-500 text-white border-yellow-500' :
-                          'bg-red-500 text-white border-red-500'
+                          runningStatus === 'Running' ? 'bg-success text-success-foreground border-success' :
+                          runningStatus === 'Partial' ? 'bg-warning text-warning-foreground border-warning' :
+                          'bg-destructive text-destructive-foreground border-destructive'
                         }`}
                       >
                         {runningStatus}
@@ -287,7 +473,7 @@ export function DevToolPage() {
                       <Badge 
                         variant="outline"
                         className={`text-xs font-medium ${
-                          isDeployed ? 'bg-green-500 text-white border-green-500' : 'bg-yellow-500 text-white border-yellow-500'
+                          isDeployed ? 'bg-success text-success-foreground border-success' : 'bg-warning text-warning-foreground border-warning'
                         }`}
                       >
                         {isDeployed ? "Deployed" : "Draft"}
@@ -355,7 +541,7 @@ export function DevToolPage() {
 
   const renderNodesList = (nodes: any[], totalCount: number) => (
     <div className="space-y-4">
-      <div className="overflow-hidden border border-border rounded-lg bg-card">
+      <div className="overflow-hidden border border-border rounded-lg bg-card shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="border-b border-border bg-muted/30">
@@ -412,7 +598,7 @@ export function DevToolPage() {
                       <Badge 
                         variant="outline"
                         className={`text-xs font-medium ${
-                          isDeployed ? 'bg-green-500 text-white border-green-500' : 'bg-yellow-500 text-white border-yellow-500'
+                          isDeployed ? 'bg-success text-success-foreground border-success' : 'bg-warning text-warning-foreground border-warning'
                         }`}
                       >
                         {isDeployed ? "Deployed" : "Draft"}
@@ -425,7 +611,7 @@ export function DevToolPage() {
                       {node.node_type || 'N/A'}
                     </TableCell>
                     <TableCell className="px-6 py-4 text-sm text-muted-foreground">
-                      {node.version || 'N/A'}
+                      {node.version || '1.0'}
                     </TableCell>
                     <TableCell className="px-6 py-4 text-sm text-muted-foreground">
                       {node.updated_at ? new Date(node.updated_at).toLocaleDateString('en-US', {
@@ -458,13 +644,6 @@ export function DevToolPage() {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-2"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
                           className="h-8 px-2 text-destructive hover:text-destructive" 
                           onClick={() => handleDeleteNode(node.id)}
                         >
@@ -485,7 +664,7 @@ export function DevToolPage() {
 
   const renderSubnodesList = (subnodes: any[], totalCount: number) => (
     <div className="space-y-4">
-      <div className="overflow-hidden border border-border rounded-lg bg-card">
+      <div className="overflow-hidden border border-border rounded-lg bg-card shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="border-b border-border bg-muted/30">
@@ -494,6 +673,12 @@ export function DevToolPage() {
               </TableHead>
               <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Status
+              </TableHead>
+              <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Mediation Type
+              </TableHead>
+              <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Node Type
               </TableHead>
               <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Version
@@ -512,7 +697,7 @@ export function DevToolPage() {
           <TableBody>
             {subnodes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-sm">No subnodes found</span>
                   </div>
@@ -520,8 +705,7 @@ export function DevToolPage() {
               </TableRow>
             ) : (
               subnodes.map((subnode: any) => {
-                const isActive = subnode.active_version;
-                const isDraft = subnode.status === 'Draft';
+                const isDeployed = subnode.is_deployed;
                 
                 return (
                   <TableRow 
@@ -537,14 +721,20 @@ export function DevToolPage() {
                       <Badge 
                         variant="outline"
                         className={`text-xs font-medium ${
-                          isActive && !isDraft ? 'bg-green-500 text-white border-green-500' : 'bg-yellow-500 text-white border-yellow-500'
+                          isDeployed ? 'bg-success text-success-foreground border-success' : 'bg-warning text-warning-foreground border-warning'
                         }`}
                       >
-                        {isActive && !isDraft ? "Active" : "Draft"}
+                        {isDeployed ? "Deployed" : "Draft"}
                       </Badge>
                     </TableCell>
                     <TableCell className="px-6 py-4 text-sm text-muted-foreground">
-                      {subnode.active_version || 'N/A'}
+                      {subnode.mediation_type || 'N/A'}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-sm text-muted-foreground">
+                      {subnode.node_type || 'N/A'}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-sm text-muted-foreground">
+                      {subnode.version || '1.0'}
                     </TableCell>
                     <TableCell className="px-6 py-4 text-sm text-muted-foreground">
                       {subnode.updated_at ? new Date(subnode.updated_at).toLocaleDateString('en-US', {
@@ -577,13 +767,6 @@ export function DevToolPage() {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-2"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
                           className="h-8 px-2 text-destructive hover:text-destructive" 
                           onClick={() => handleDeleteSubnode(subnode.id)}
                         >
@@ -604,18 +787,24 @@ export function DevToolPage() {
 
   const renderParametersList = (parameters: any[], totalCount: number) => (
     <div className="space-y-4">
-      <div className="overflow-hidden border border-border rounded-lg bg-card">
+      <div className="overflow-hidden border border-border rounded-lg bg-card shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="border-b border-border bg-muted/30">
               <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Key
+                Name
+              </TableHead>
+              <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Data Type
+              </TableHead>
+              <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Direction
+              </TableHead>
+              <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Is Required
               </TableHead>
               <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Default Value
-              </TableHead>
-              <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Status
               </TableHead>
               <TableHead className="h-12 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Last Update Date
@@ -631,92 +820,91 @@ export function DevToolPage() {
           <TableBody>
             {parameters.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-sm">No parameters found</span>
                   </div>
                 </TableCell>
               </TableRow>
             ) : (
-              parameters.map((param: any) => {
-                const isActive = param.is_active;
-                const isDraft = param.status === 'Draft';
-                
-                return (
-                  <TableRow 
-                    key={param.id} 
-                    className="hover:bg-muted/20 transition-colors"
-                  >
-                    <TableCell className="px-6 py-4">
-                      <div>
-                        <div className="font-medium text-foreground">{param.key}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-6 py-4">
-                      <div className="max-w-xs">
-                        <div className="truncate text-sm text-foreground font-mono bg-muted/30 px-2 py-1 rounded text-xs">
-                          {param.value}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-6 py-4">
-                      <Badge 
-                        variant="outline"
-                        className={`text-xs font-medium ${
-                          isActive && !isDraft ? 'bg-green-500 text-white border-green-500' : 'bg-yellow-500 text-white border-yellow-500'
-                        }`}
+              parameters.map((parameter: any) => (
+                <TableRow 
+                  key={parameter.id} 
+                  className="hover:bg-muted/20 transition-colors"
+                >
+                  <TableCell className="px-6 py-4">
+                    <div>
+                      <div className="font-medium text-foreground">{parameter.name}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
+                    <Badge variant="outline" className="text-xs">
+                      {parameter.data_type || 'String'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs ${
+                        parameter.direction === 'INPUT' ? 'bg-info/20 text-info border-info' : 'bg-warning/20 text-warning border-warning'
+                      }`}
+                    >
+                      {parameter.direction || 'INPUT'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
+                    <Badge 
+                      variant="outline"
+                      className={`text-xs ${
+                        parameter.is_required ? 'bg-destructive/20 text-destructive border-destructive' : 'bg-muted/20 text-muted-foreground border-muted'
+                      }`}
+                    >
+                      {parameter.is_required ? "Required" : "Optional"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-sm text-muted-foreground">
+                    {parameter.default_value || 'N/A'}
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-sm text-muted-foreground">
+                    {parameter.updated_at ? new Date(parameter.updated_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    }) : 'N/A'}
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-sm text-muted-foreground">
+                    {parameter.updated_by || 'System'}
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 px-2" 
+                        onClick={() => navigate(`/parameters/${parameter.id}`)}
                       >
-                        {isActive && !isDraft ? "Active" : "Draft"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-sm text-muted-foreground">
-                      {param.updated_at ? new Date(param.updated_at).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                      }) : 'N/A'}
-                    </TableCell>
-                    <TableCell className="px-6 py-4 text-sm text-muted-foreground">
-                      {param.updated_by || 'System'}
-                    </TableCell>
-                    <TableCell className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 px-2" 
-                          onClick={() => navigate(`/parameters/${param.id}`)}
-                        >
-                          <Eye className="h-3 w-3" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 px-2" 
-                          onClick={() => handleExportParameter(param.id)}
-                        >
-                          <Download className="h-3 w-3" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 px-2"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 px-2 text-destructive hover:text-destructive" 
-                          onClick={() => handleDeleteParameter(param.id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 px-2" 
+                        onClick={() => handleExportParameter(parameter)}
+                      >
+                        <Download className="h-3 w-3" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 px-2 text-destructive hover:text-destructive" 
+                        onClick={() => handleDeleteParameter(parameter.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
             )}
           </TableBody>
         </Table>
@@ -725,196 +913,12 @@ export function DevToolPage() {
     </div>
   );
 
-  // Fetch nodes
-  const fetchNodes = async () => {
-    try {
-      const response = await axios.get("http://127.0.0.1:8000/api/node-families/");
-      setNodes(response.data.results || []);
-    } catch (error) {
-      console.error("Error fetching nodes:", error);
-    } finally {
-      setNodesLoading(false);
-    }
-  };
-
-  // Fetch parameters
-  const fetchParameters = async () => {
-    try {
-      const response = await parameterService.getParameters();
-      setParameters(response);
-    } catch (error) {
-      console.error("Error fetching parameters:", error);
-    } finally {
-      setParametersLoading(false);
-    }
-  };
-
-
-  // Initialize data
-  useEffect(() => {
-    fetchNodes();
-    fetchParameters();
-  }, []);
-
-  // Sync flows data when it changes
-  useEffect(() => {
-    if (flowsData) {
-      setFlows(flowsData);
-    }
-  }, [flowsData]);
-
-  // Flow handlers
-  const handleDeleteFlow = async (flowId: string) => {
-    try {
-      await deleteItem(flowId);
-      setFlows(flows.filter(flow => flow.id !== flowId));
-      toast({
-        title: "Success",
-        description: "Flow deleted successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete flow",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleExportFlow = (flow: any) => {
-    const dataStr = JSON.stringify(flow, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${flow.name}.json`;
-    link.click();
-  };
-
-  const handleCloneFlow = (flow: any) => {
-    setFlowToClone(flow);
-    setShowCloneFlowDialog(true);
-  };
-
-  // Node handlers
-  const handleDeleteNode = async (nodeId: string) => {
-    try {
-      await axios.delete(`http://127.0.0.1:8000/api/node-families/${nodeId}/`);
-      setNodes(nodes.filter(node => node.id !== nodeId));
-      toast({
-        title: "Success",
-        description: "Node deleted successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete node",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleExportNode = (node: any) => {
-    const dataStr = JSON.stringify(node, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${node.name}.json`;
-    link.click();
-  };
-
-  // Subnode handlers
-  const handleDeleteSubnode = async (subnodeId: string) => {
-    try {
-      await subnodeService.deleteSubnode(subnodeId);
-      toast({
-        title: "Success",
-        description: "Subnode deleted successfully",
-      });
-      refetchSubnodes();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete subnode",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleExportSubnode = (subnode: any) => {
-    const dataStr = JSON.stringify(subnode, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${subnode.name}.json`;
-    link.click();
-  };
-
-  // Parameter handlers
-  const handleDeleteParameter = async (paramId: string) => {
-    try {
-      await parameterService.deleteParameter(paramId);
-      setParameters(parameters.filter(param => param.id !== paramId));
-      toast({
-        title: "Success",
-        description: "Parameter deleted successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete parameter",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleExportParameter = async (paramId: string) => {
-    try {
-      const blob = await parameterService.exportParameter(paramId);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `parameter_${paramId}.json`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to export parameter",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Git info state and handlers
-  const [gitInfo, setGitInfo] = useState<GitInfo | null>(null);
-  const [gitLoading, setGitLoading] = useState(false);
-
   const fetchLatestGit = async () => {
-    try {
-      setGitLoading(true);
-      const info = await gitService.getLatestCommit();
-      setGitInfo(info);
-    } catch (error) {
-      toast({
-        title: "Git fetch failed",
-        description: "Could not retrieve latest commit.",
-        variant: "destructive",
-      });
-    } finally {
-      setGitLoading(false);
+    if (!gitLoading) {
+      await fetchGitInfo();
     }
   };
 
-  useEffect(() => {
-    void fetchLatestGit();
-  }, []);
-
-  // Auto-refresh git info every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       if (!gitLoading) {
@@ -926,211 +930,401 @@ export function DevToolPage() {
   }, [gitLoading]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="w-full p-6 space-y-8">
-
-
-        {/* Professional Tabs */}
-        <div className="bg-card border border-border rounded-lg shadow-sm">
-          <Tabs defaultValue="flows" className="w-full">
-            <div className="border-b border-border bg-muted/30 rounded-t-lg">
-              <TabsList className="h-12 w-full justify-start bg-transparent p-0">
-                <TabsTrigger 
-                  value="flows" 
-                  className="flex items-center gap-2 h-12 px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
-                >
-                  <span className="font-medium">Flows</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="nodes" 
-                  className="flex items-center gap-2 h-12 px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
-                >
-                  <span className="font-medium">Nodes</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="subnodes" 
-                  className="flex items-center gap-2 h-12 px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
-                >
-                  <span className="font-medium">Subnodes</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="parameters" 
-                  className="flex items-center gap-2 h-12 px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
-                >
-                  <span className="font-medium">Parameters</span>
-                </TabsTrigger>
-              </TabsList>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="container mx-auto px-6 py-8">
+        {/* Enhanced Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-foreground mb-2">Development Tools</h1>
+              <p className="text-lg text-muted-foreground">Manage and monitor your enterprise development environment</p>
             </div>
-
-            {/* Flows Tab */}
-            <TabsContent value="flows" className="p-0">
-              <div className="p-6 border-b border-border">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-semibold text-foreground">Flow Management</h3>
-                    <p className="text-sm text-muted-foreground">Create, edit, and manage system flows</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Button variant="outline" size="sm" className="h-9">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Import
-                    </Button>
-                    <Button onClick={() => setShowCreateFlowDialog(true)} size="sm" className="h-9">
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Flow
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-6">
-                {flowsLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent" />
-                      <span className="text-sm">Loading flows...</span>
-                    </div>
-                  </div>
-                ) : (
-                  renderFlowsList(getPaginatedItems(flows, 'flows'), flows.length)
-                )}
-              </div>
-            </TabsContent>
-
-            {/* Nodes Tab */}
-            <TabsContent value="nodes" className="p-0">
-              <div className="p-6 border-b border-border">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-semibold text-foreground">Node Management</h3>
-                    <p className="text-sm text-muted-foreground">Create, edit, and manage system nodes</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Button variant="outline" size="sm" className="h-9">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Import
-                    </Button>
-                    <Button onClick={() => navigate("/nodes/new")} size="sm" className="h-9">
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Node
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-6">
-                {nodesLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent" />
-                      <span className="text-sm">Loading nodes...</span>
-                    </div>
-                  </div>
-                ) : (
-                  renderNodesList(getPaginatedItems(nodes, 'nodes'), nodes.length)
-                )}
-              </div>
-            </TabsContent>
-
-            {/* Subnodes Tab */}
-            <TabsContent value="subnodes" className="p-0">
-              <div className="p-6 border-b border-border">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-semibold text-foreground">Subnode Management</h3>
-                    <p className="text-sm text-muted-foreground">Create, edit, and manage system subnodes</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Button variant="outline" size="sm" className="h-9">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Import
-                    </Button>
-                    <Button onClick={() => navigate("/subnodes/create")} size="sm" className="h-9">
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Subnode
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-6">
-                {subnodesLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent" />
-                      <span className="text-sm">Loading subnodes...</span>
-                    </div>
-                  </div>
-                ) : (
-                  renderSubnodesList(getPaginatedItems((subnodesData?.results || []), 'subnodes'), (subnodesData?.results || []).length)
-                )}
-              </div>
-            </TabsContent>
-
-            {/* Parameters Tab */}
-            <TabsContent value="parameters" className="p-0">
-              <div className="p-6 border-b border-border">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-semibold text-foreground">Parameter Management</h3>
-                    <p className="text-sm text-muted-foreground">Create, edit, and manage system parameters</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Button variant="outline" size="sm" className="h-9">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Import
-                    </Button>
-                    <Button onClick={() => navigate("/parameters/new")} size="sm" className="h-9">
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Parameter
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-6">
-                {parametersLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent" />
-                      <span className="text-sm">Loading parameters...</span>
-                    </div>
-                  </div>
-                ) : (
-                  renderParametersList(getPaginatedItems(parameters, 'parameters'), parameters.length)
-                )}
-              </div>
-            </TabsContent>
-
-          </Tabs>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" onClick={() => setGitInfo(null)}>
+                <RefreshCcw className="mr-2 h-4 w-4" />
+                Refresh All
+              </Button>
+              <Button variant="default" size="sm">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Dialogs */}
-      <CreateFlowDialog 
-        open={showCreateFlowDialog} 
-        onOpenChange={setShowCreateFlowDialog}
-      />
-      
-      <CloneFlowDialog
-        open={showCloneFlowDialog}
-        onOpenChange={setShowCloneFlowDialog}
-        sourceFlow={flowToClone}
-        onClone={(sourceFlow, newName, newDescription) => {
-          const clonedFlow = {
-            ...sourceFlow,
-            id: Date.now().toString(),
-            name: newName,
-            description: newDescription,
-            is_active: false,
-            is_deployed: false,
-            created_at: new Date().toISOString(),
-            created_by: "Current User"
-          };
-          setFlows([...flows, clonedFlow]);
-          navigate(`/flows/${clonedFlow.id}/edit`);
-        }}
-      />
+        {/* Dashboard Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Total Flows</p>
+                  <p className="text-3xl font-bold text-foreground">{flows?.length || 0}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {flows?.filter(f => f.is_deployed).length || 0} deployed
+                  </p>
+                </div>
+                <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <Workflow className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-info/10 to-info/5 border-info/20 hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Total Nodes</p>
+                  <p className="text-3xl font-bold text-foreground">{nodes?.length || 0}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {nodes?.filter(n => n.is_deployed).length || 0} deployed
+                  </p>
+                </div>
+                <div className="h-12 w-12 bg-info/10 rounded-lg flex items-center justify-center">
+                  <Database className="h-6 w-6 text-info" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-warning/10 to-warning/5 border-warning/20 hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Total Subnodes</p>
+                  <p className="text-3xl font-bold text-foreground">{subnodesData?.results?.length || 0}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {subnodesData?.results?.length || 0} active
+                  </p>
+                </div>
+                <div className="h-12 w-12 bg-warning/10 rounded-lg flex items-center justify-center">
+                  <Network className="h-6 w-6 text-warning" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-success/10 to-success/5 border-success/20 hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Total Parameters</p>
+                  <p className="text-3xl font-bold text-foreground">{parameters?.length || 0}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Active configurations</p>
+                </div>
+                <div className="h-12 w-12 bg-success/10 rounded-lg flex items-center justify-center">
+                  <Grid3X3 className="h-6 w-6 text-success" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Enhanced Tabs */}
+        <Card className="shadow-lg border-0 bg-card/50 backdrop-blur-sm">
+          <CardContent className="p-0">
+            <Tabs defaultValue="flows" className="w-full">
+              <div className="border-b border-border bg-muted/30 px-6 py-4">
+                <TabsList className="bg-background/50 border border-border shadow-sm">
+                  <TabsTrigger value="flows" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Workflow className="mr-2 h-4 w-4" />
+                    Flows Management
+                  </TabsTrigger>
+                  <TabsTrigger value="nodes" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Database className="mr-2 h-4 w-4" />
+                    Nodes Management
+                  </TabsTrigger>
+                  <TabsTrigger value="subnodes" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Network className="mr-2 h-4 w-4" />
+                    Subnodes Management
+                  </TabsTrigger>
+                  <TabsTrigger value="parameters" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Grid3X3 className="mr-2 h-4 w-4" />
+                    Parameters Management
+                  </TabsTrigger>
+                  <TabsTrigger value="git" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <GitCommit className="mr-2 h-4 w-4" />
+                    Version Control
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
+              <TabsContent value="flows" className="p-6">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-2xl font-semibold text-foreground">Flow Management</h3>
+                      <p className="text-muted-foreground mt-1">Create, deploy, and manage your data processing flows</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button variant="outline" size="sm">
+                        <Upload className="mr-2 h-4 w-4" />
+                        Import Flow
+                      </Button>
+                      <Button onClick={() => setShowCreateFlowDialog(true)} className="bg-gradient-to-r from-primary to-primary-glow hover:shadow-lg transition-all duration-300">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create Flow
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {flowsLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <p className="text-muted-foreground">Loading flows...</p>
+                      </div>
+                    </div>
+                  ) : (
+                    renderFlowsList(getPaginatedItems(flows, 'flows'), flows.length)
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="nodes" className="p-6">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-2xl font-semibold text-foreground">Node Management</h3>
+                      <p className="text-muted-foreground mt-1">Configure and deploy processing nodes for your data pipelines</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button variant="outline" size="sm">
+                        <Upload className="mr-2 h-4 w-4" />
+                        Import Node
+                      </Button>
+                      <Button onClick={() => navigate('/nodes/create')} className="bg-gradient-to-r from-info to-info/80 hover:shadow-lg transition-all duration-300">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create Node
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {nodesLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-info"></div>
+                        <p className="text-muted-foreground">Loading nodes...</p>
+                      </div>
+                    </div>
+                  ) : (
+                    renderNodesList(getPaginatedItems(nodes, 'nodes'), nodes.length)
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="subnodes" className="p-6">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-2xl font-semibold text-foreground">Subnode Management</h3>
+                      <p className="text-muted-foreground mt-1">Manage subnode configurations and deployments</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button variant="outline" size="sm">
+                        <Upload className="mr-2 h-4 w-4" />
+                        Import Subnode
+                      </Button>
+                      <Button onClick={() => navigate('/subnodes/create')} className="bg-gradient-to-r from-warning to-warning/80 hover:shadow-lg transition-all duration-300">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create Subnode
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {subnodesLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-warning"></div>
+                        <p className="text-muted-foreground">Loading subnodes...</p>
+                      </div>
+                    </div>
+                  ) : (
+                    renderSubnodesList(getPaginatedItems(subnodesData?.results || [], 'subnodes'), subnodesData?.results?.length || 0)
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="parameters" className="p-6">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-2xl font-semibold text-foreground">Parameter Management</h3>
+                      <p className="text-muted-foreground mt-1">Define and manage configuration parameters for your system</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button variant="outline" size="sm">
+                        <Upload className="mr-2 h-4 w-4" />
+                        Import Parameters
+                      </Button>
+                      <Button onClick={() => navigate('/parameters/create')} className="bg-gradient-to-r from-success to-success/80 hover:shadow-lg transition-all duration-300">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create Parameter
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {parametersLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-success"></div>
+                        <p className="text-muted-foreground">Loading parameters...</p>
+                      </div>
+                    </div>
+                  ) : (
+                    renderParametersList(getPaginatedItems(parameters, 'parameters'), parameters.length)
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="git" className="p-6">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-2xl font-semibold text-foreground">Version Control</h3>
+                      <p className="text-muted-foreground mt-1">Track changes and manage your repository history</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button variant="outline" size="sm">
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        View on GitHub
+                      </Button>
+                      <Button onClick={fetchGitInfo} disabled={gitLoading} className="bg-gradient-to-r from-primary to-primary-glow">
+                        <RefreshCcw className="mr-2 h-4 w-4" />
+                        Refresh Git Info
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <Card className="shadow-lg border-0 bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm">
+                    <CardHeader className="bg-gradient-to-r from-muted/50 to-muted/30 border-b border-border">
+                      <CardTitle className="flex items-center gap-2">
+                        <GitCommit className="h-5 w-5 text-primary" />
+                        Repository Information
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      {gitLoading ? (
+                        <div className="flex items-center justify-center py-12">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                            <p className="text-muted-foreground">Loading Git information...</p>
+                          </div>
+                        </div>
+                      ) : gitInfo ? (
+                        <div className="space-y-6">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+                              <CardContent className="p-4">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Current Branch</p>
+                                    <p className="text-xl font-bold text-foreground">{gitInfo.currentBranch || 'main'}</p>
+                                  </div>
+                                  <GitFork className="h-8 w-8 text-primary" />
+                                </div>
+                              </CardContent>
+                            </Card>
+                            
+                            <Card className="bg-gradient-to-br from-info/10 to-info/5 border-info/20">
+                              <CardContent className="p-4">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Total Commits</p>
+                                    <p className="text-xl font-bold text-foreground">{gitInfo.totalCommits}</p>
+                                  </div>
+                                  <GitCommit className="h-8 w-8 text-info" />
+                                </div>
+                              </CardContent>
+                            </Card>
+                            
+                            <Card className="bg-gradient-to-br from-success/10 to-success/5 border-success/20">
+                              <CardContent className="p-4">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Repository Status</p>
+                                    <p className="text-xl font-bold text-success">Active</p>
+                                  </div>
+                                  <Badge className="bg-success text-success-foreground">Live</Badge>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+                          
+                          <div className="space-y-4">
+                            <h4 className="text-lg font-semibold text-foreground">Recent Commits</h4>
+                            <div className="space-y-3">
+                              {(gitInfo.recentCommits || []).map((commit, index) => (
+                                <Card key={index} className="hover:shadow-md transition-shadow duration-200 border-l-4 border-l-primary">
+                                  <CardContent className="p-4">
+                                    <div className="flex items-start gap-4">
+                                      <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <GitCommit className="h-4 w-4 text-primary" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-foreground truncate">{commit.message}</p>
+                                        <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                                          <span className="font-medium">{commit.author}</span>
+                                          <Badge variant="outline" className="text-xs">{commit.hash.substring(0, 7)}</Badge>
+                                          <span>{commit.date}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-12">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="h-16 w-16 bg-muted/50 rounded-full flex items-center justify-center">
+                              <GitCommit className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-medium text-foreground">No Git information available</h3>
+                              <p className="text-muted-foreground mt-1">Click refresh to load repository information</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        {/* Dialogs */}
+        <CreateFlowDialog 
+          open={showCreateFlowDialog} 
+          onOpenChange={setShowCreateFlowDialog} 
+        />
+        
+        <CloneFlowDialog 
+          open={showCloneFlowDialog} 
+          onOpenChange={setShowCloneFlowDialog} 
+          sourceFlow={flowToClone}
+          onClone={(sourceFlow, newName, newDescription) => {
+            const clonedFlow = {
+              ...sourceFlow,
+              id: Date.now().toString(),
+              name: newName,
+              description: newDescription,
+              is_active: false,
+              is_deployed: false,
+              created_at: new Date().toISOString(),
+              created_by: "Current User"
+            };
+            setFlows([...flows, clonedFlow]);
+            navigate(`/flows/${clonedFlow.id}/edit`);
+          }}
+        />
+      </div>
     </div>
   );
 }
