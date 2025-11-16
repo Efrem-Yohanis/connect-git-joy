@@ -80,11 +80,6 @@ const AdminLogin = () => {
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
-          <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-            <p className="text-xs text-muted-foreground text-center">
-              Note: This uses client-side storage. For production, integrate with a proper backend authentication system.
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>
