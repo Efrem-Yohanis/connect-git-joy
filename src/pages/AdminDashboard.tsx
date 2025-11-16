@@ -57,6 +57,44 @@ const AdminDashboard = () => {
     const savedProjects = localStorage.getItem("adminProjects");
     if (savedProjects) {
       setProjects(JSON.parse(savedProjects));
+    } else {
+      // Add sample data if no projects exist
+      const sampleProjects: Project[] = [
+        {
+          id: "1",
+          title: "E-Commerce Platform",
+          link: "https://example.com/ecommerce",
+          githubLink: "https://github.com/example/ecommerce",
+          demoVideo: "https://youtube.com/watch?v=sample1",
+          createdAt: new Date("2024-01-15").toISOString()
+        },
+        {
+          id: "2",
+          title: "Task Management App",
+          link: "https://example.com/taskmanager",
+          githubLink: "https://github.com/example/taskmanager",
+          demoVideo: "https://youtube.com/watch?v=sample2",
+          createdAt: new Date("2024-02-20").toISOString()
+        },
+        {
+          id: "3",
+          title: "Real Estate Website",
+          link: "https://example.com/realestate",
+          githubLink: "https://github.com/example/realestate",
+          demoVideo: "https://youtube.com/watch?v=sample3",
+          createdAt: new Date("2024-03-10").toISOString()
+        },
+        {
+          id: "4",
+          title: "Social Media Dashboard",
+          link: "https://example.com/socialdash",
+          githubLink: "https://github.com/example/socialdash",
+          demoVideo: "https://youtube.com/watch?v=sample4",
+          createdAt: new Date("2024-04-05").toISOString()
+        }
+      ];
+      localStorage.setItem("adminProjects", JSON.stringify(sampleProjects));
+      setProjects(sampleProjects);
     }
   }, [navigate]);
 
